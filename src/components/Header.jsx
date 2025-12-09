@@ -3,7 +3,16 @@
 import { useState } from 'react';
 
 export default function Header() {
-  const [selectedDate, setSelectedDate] = useState('2025-11-10');
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
 
   return (
     <header className="bg-[#1A2332] px-8 py-4 flex items-center justify-end">
@@ -12,7 +21,7 @@ export default function Header() {
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          className="px-4 py-2 bg-[#2A3441] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-4 py-2 bg-[#2A3441] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
         />
         <div className="w-10 h-10 rounded-full overflow-hidden">
           <img

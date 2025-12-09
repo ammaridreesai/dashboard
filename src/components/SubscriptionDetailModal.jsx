@@ -115,7 +115,7 @@ export default function SubscriptionDetailModal({ open, onClose, subscription })
               {/* Section Header */}
               <button
                 onClick={() => toggleSection(index)}
-                className="w-full flex items-center justify-between px-4 py-3 text-white hover:bg-[#2A3441] transition-colors"
+                className="w-full flex items-center justify-between px-4 py-3 text-white hover:bg-[#2A3441] transition-colors cursor-pointer"
               >
                 <span className="font-medium">{detail.type}</span>
                 <svg
@@ -164,7 +164,7 @@ export default function SubscriptionDetailModal({ open, onClose, subscription })
         <div className="flex justify-end">
           <button
             onClick={onClose}
-            className="bg-white text-gray-800 py-2 px-6 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
+            className="bg-white text-gray-800 py-2 px-6 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors cursor-pointer"
           >
             Back
           </button>

@@ -118,7 +118,7 @@ export default function UserDetailModal({ open, onClose, user }) {
         <div className="flex justify-end">
           <button
             onClick={onClose}
-            className="bg-white text-gray-800 py-2 px-6 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
+            className="bg-white text-gray-800 py-2 px-6 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors cursor-pointer"
           >
             Back
           </button>

@@ -105,7 +105,7 @@ export default function AssignPromoModal({ open, onClose, user, promoCodes }) {
               setSelectedPromoType(e.target.value);
               setSelectedPromoCode('');
             }}
-            className="w-full px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
           >
             <option value="monthly">Monthly</option>
             <option value="yearly">Yearly</option>
@@ -120,7 +120,7 @@ export default function AssignPromoModal({ open, onClose, user, promoCodes }) {
           <select
             value={selectedPromoCode}
             onChange={(e) => setSelectedPromoCode(e.target.value)}
-            className="w-full px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
           >
             <option value="">Select a promo code</option>
             {filteredPromoCodes.map((promo) => (
@@ -140,13 +140,13 @@ export default function AssignPromoModal({ open, onClose, user, promoCodes }) {
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="bg-gray-600 text-white py-2 px-6 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"
+            className="bg-gray-600 text-white py-2 px-6 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={handleAssign}
-            className="bg-white text-gray-800 py-2 px-6 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
+            className="bg-white text-gray-800 py-2 px-6 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors cursor-pointer"
           >
             Assign
           </button>
