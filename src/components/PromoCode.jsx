@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './Header';
 import AssignPromoModal from './AssignPromoModal';
+import apiClient from '../services/api';
 
 export default function PromoCode() {
   const [activeTab, setActiveTab] = useState('generate'); // 'generate' or 'assign'
@@ -11,84 +12,53 @@ export default function PromoCode() {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [selectedUser, setSelectedUser] = useState(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [promoCodes, setPromoCodes] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('success'); // 'success' or 'error'
 
-  // Dummy users data
-  const [users] = useState([
-    {
-      id: 1,
-      name: 'Ali Farhan',
-      email: 'ali@gmail.com',
-      plan: 'Free',
-      status: 'Active',
-    },
-    {
-      id: 2,
-      name: 'Sara Khan',
-      email: 'sara.n@gmail.com',
-      plan: 'Paid',
-      status: 'Active',
-    },
-    {
-      id: 3,
-      name: 'John Doe',
-      email: 'john.d@gmail.com',
-      plan: 'Free',
-      status: 'Banned',
-    },
-    {
-      id: 4,
-      name: 'Emily Chen',
-      email: 'emily@gmail.com',
-      plan: 'Paid',
-      status: 'Active',
-    },
-    {
-      id: 5,
-      name: 'Michael Smith',
-      email: 'michael@gmail.com',
-      plan: 'Free',
-      status: 'Pending',
-    },
-  ]);
+  // Fetch promo codes from API
+  useEffect(() => {
+    const fetchPromoCodes = async () => {
+      try {
+        const response = await apiClient.get('/promo-codes/all');
+        if (response.data.isRequestSuccessful) {
+          setPromoCodes(response.data.successResponse);
+        }
+      } catch (error) {
+        console.error('Error fetching promo codes:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Dummy promo codes data
-  const [promoCodes] = useState([
-    {
-      id: 103,
-      promoCode: 'PROMOLRAKNRXQTM',
-      promoType: 'monthly',
-      creationDate: '2025-11-18T19:30:17.885Z',
-      isUsed: true,
-    },
-    {
-      id: 104,
-      promoCode: 'PROMOCYZMNABXPL',
-      promoType: 'yearly',
-      creationDate: '2025-10-15T14:22:10.123Z',
-      isUsed: false,
-    },
-    {
-      id: 105,
-      promoCode: 'PROMOKJHGFDSAWQ',
-      promoType: 'monthly',
-      creationDate: '2025-09-05T08:15:30.456Z',
-      isUsed: true,
-    },
-    {
-      id: 106,
-      promoCode: 'PROMOXYZABCDEFG',
-      promoType: 'yearly',
-      creationDate: '2025-08-22T16:45:22.789Z',
-      isUsed: false,
-    },
-    {
-      id: 107,
-      promoCode: 'PROMOWERTYLMNOP',
-      promoType: 'monthly',
-      creationDate: '2025-07-10T10:30:45.321Z',
-      isUsed: true,
-    },
-  ]);
+    fetchPromoCodes();
+  }, []);
+
+  // Fetch users from API when switching to assign tab
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (activeTab === 'assign' && users.length === 0) {
+        setIsLoadingUsers(true);
+        try {
+          const response = await apiClient.get('/users/dashboard/all-users');
+          if (response.data.isRequestSuccessful) {
+            setUsers(response.data.successResponse);
+          }
+        } catch (error) {
+          console.error('Error fetching users:', error);
+        } finally {
+          setIsLoadingUsers(false);
+        }
+      }
+    };
+
+    fetchUsers();
+  }, [activeTab, users.length]);
 
   // Filter promo codes based on search term
   const filteredPromoCodes = promoCodes.filter(
@@ -101,7 +71,8 @@ export default function PromoCode() {
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.role && user.role.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Sort promo codes
@@ -158,10 +129,48 @@ export default function PromoCode() {
   };
 
   // Handle generate promo code
-  const handleGeneratePromoCode = () => {
-    console.log('Generating promo code for:', promoType);
-    // Here you would call your API to generate a promo code
-    alert(`Generating ${promoType} promo code!`);
+  const handleGeneratePromoCode = async () => {
+    setIsGenerating(true);
+    try {
+      const response = await apiClient.post('/promo-codes/create', {
+        promoType: promoType,
+      });
+
+      if (response.data.isRequestSuccessful) {
+        // Show success toast
+        setToastType('success');
+        setToastMessage(`${promoType.charAt(0).toUpperCase() + promoType.slice(1)} promo code generated successfully!`);
+        setShowToast(true);
+
+        // Auto-hide toast after 3 seconds
+        setTimeout(() => {
+          setShowToast(false);
+        }, 3000);
+
+        // Refresh the promo codes list
+        const fetchResponse = await apiClient.get('/promo-codes/all');
+        if (fetchResponse.data.isRequestSuccessful) {
+          setPromoCodes(fetchResponse.data.successResponse);
+        }
+      } else {
+        setToastType('error');
+        setToastMessage('Failed to generate promo code. Please try again.');
+        setShowToast(true);
+        setTimeout(() => {
+          setShowToast(false);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error generating promo code:', error);
+      setToastType('error');
+      setToastMessage('An error occurred while generating the promo code.');
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   // Get status badge color
@@ -193,6 +202,36 @@ export default function PromoCode() {
     setShowAssignModal(false);
     setSelectedUser(null);
   };
+
+  // Handle assign success/error callback
+  const handleAssignSuccess = async (message, isSuccess) => {
+    setToastType(isSuccess ? 'success' : 'error');
+    setToastMessage(message);
+    setShowToast(true);
+
+    // Auto-hide toast after 3 seconds
+    setTimeout(() => {
+      setShowToast(false);
+    }, 3000);
+
+    // Refresh promo codes if assignment was successful
+    if (isSuccess) {
+      try {
+        const response = await apiClient.get('/promo-codes/all');
+        if (response.data.isRequestSuccessful) {
+          setPromoCodes(response.data.successResponse);
+        }
+        // Refresh users list to update promo status
+        const usersResponse = await apiClient.get('/users/dashboard/all-users');
+        if (usersResponse.data.isRequestSuccessful) {
+          setUsers(usersResponse.data.successResponse);
+        }
+      } catch (error) {
+        console.error('Error refreshing data:', error);
+      }
+    }
+  };
+
 
   // Sort icon component
   const SortIcon = ({ columnKey }) => {
@@ -277,7 +316,7 @@ export default function PromoCode() {
         <div className="flex gap-4 mb-6">
           <button
             onClick={() => setActiveTab('generate')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-6 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
               activeTab === 'generate'
                 ? 'bg-white text-gray-800'
                 : 'bg-[#1E2532] text-gray-400 hover:text-white'
@@ -287,7 +326,7 @@ export default function PromoCode() {
           </button>
           <button
             onClick={() => setActiveTab('assign')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+            className={`px-6 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
               activeTab === 'assign'
                 ? 'bg-white text-gray-800'
                 : 'bg-[#1E2532] text-gray-400 hover:text-white'
@@ -315,7 +354,7 @@ export default function PromoCode() {
               <select
                 value={promoType}
                 onChange={(e) => setPromoType(e.target.value)}
-                className="w-full px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               >
                 <option value="monthly">Monthly</option>
                 <option value="yearly">Yearly</option>
@@ -325,9 +364,14 @@ export default function PromoCode() {
             {/* Generate Button */}
             <button
               onClick={handleGeneratePromoCode}
-              className="bg-white text-gray-800 py-2 px-6 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+              disabled={isGenerating}
+              className={`bg-white text-gray-800 py-2 px-6 rounded-lg font-medium transition-colors ${
+                isGenerating
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:bg-gray-100 cursor-pointer'
+              }`}
             >
-              Generate
+              {isGenerating ? 'Generating...' : 'Generate'}
             </button>
           </div>
         </div>
@@ -404,31 +448,45 @@ export default function PromoCode() {
                 </tr>
               </thead>
               <tbody>
-                {sortedPromoCodes.map((promo) => (
-                  <tr
-                    key={promo.id}
-                    className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
-                  >
-                    <td className="py-4 px-4 text-gray-200">
-                      {promo.promoCode}
-                    </td>
-                    <td className="py-4 px-4 text-gray-200">
-                      <span className="capitalize">{promo.promoType}</span>
-                    </td>
-                    <td className="py-4 px-4 text-gray-200">
-                      {formatDate(promo.creationDate)}
-                    </td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`${getStatusColor(
-                          promo.isUsed
-                        )} text-white px-3 py-1 rounded-full text-sm font-medium`}
-                      >
-                        {promo.isUsed ? 'Used' : 'Available'}
-                      </span>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="4" className="py-8 text-center">
+                      <div className="text-gray-400">Loading promo codes...</div>
                     </td>
                   </tr>
-                ))}
+                ) : sortedPromoCodes.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="py-8 text-center">
+                      <div className="text-gray-400">No promo codes found</div>
+                    </td>
+                  </tr>
+                ) : (
+                  sortedPromoCodes.map((promo, index) => (
+                    <tr
+                      key={promo.id || `promo-${index}`}
+                      className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
+                    >
+                      <td className="py-4 px-4 text-gray-200">
+                        {promo.promoCode}
+                      </td>
+                      <td className="py-4 px-4 text-gray-200">
+                        <span className="capitalize">{promo.promoType}</span>
+                      </td>
+                      <td className="py-4 px-4 text-gray-200">
+                        {formatDate(promo.creationDate)}
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`${getStatusColor(
+                            promo.isUsed
+                          )} text-white px-3 py-1 rounded-full text-sm font-medium`}
+                        >
+                          {promo.isUsed ? 'Used' : 'Available'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -490,11 +548,11 @@ export default function PromoCode() {
                     </th>
                     <th
                       className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
-                      onClick={() => handleSort('plan')}
+                      onClick={() => handleSort('role')}
                     >
                       <div className="flex items-center gap-2">
-                        Plan
-                        <SortIcon columnKey="plan" />
+                        Role
+                        <SortIcon columnKey="role" />
                       </div>
                     </th>
                     <th
@@ -512,33 +570,47 @@ export default function PromoCode() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedUsers.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
-                    >
-                      <td className="py-4 px-4 text-gray-200">{user.name}</td>
-                      <td className="py-4 px-4 text-gray-200">{user.email}</td>
-                      <td className="py-4 px-4 text-gray-200">{user.plan}</td>
-                      <td className="py-4 px-4">
-                        <span
-                          className={`${getUserStatusColor(
-                            user.status
-                          )} text-white px-3 py-1 rounded-full text-sm font-medium`}
-                        >
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4">
-                        <button
-                          onClick={() => handleAssignPromo(user)}
-                          className="bg-white text-gray-800 py-1 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
-                        >
-                          Assign
-                        </button>
+                  {isLoadingUsers ? (
+                    <tr>
+                      <td colSpan="5" className="py-8 text-center">
+                        <div className="text-gray-400">Loading users...</div>
                       </td>
                     </tr>
-                  ))}
+                  ) : sortedUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="py-8 text-center">
+                        <div className="text-gray-400">No users found</div>
+                      </td>
+                    </tr>
+                  ) : (
+                    sortedUsers.map((user, index) => (
+                      <tr
+                        key={user.id || user.userId || `user-${index}`}
+                        className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
+                      >
+                        <td className="py-4 px-4 text-gray-200">{user.name}</td>
+                        <td className="py-4 px-4 text-gray-200">{user.email}</td>
+                        <td className="py-4 px-4 text-gray-200">{user.role}</td>
+                        <td className="py-4 px-4">
+                          <span
+                            className={`${getUserStatusColor(
+                              user.status
+                            )} text-white px-3 py-1 rounded-full text-sm font-medium`}
+                          >
+                            {user.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <button
+                            onClick={() => handleAssignPromo(user)}
+                            className="bg-white text-gray-800 py-1 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors cursor-pointer"
+                          >
+                            Assign
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -552,7 +624,62 @@ export default function PromoCode() {
         onClose={handleCloseAssignModal}
         user={selectedUser}
         promoCodes={promoCodes}
+        onAssignSuccess={handleAssignSuccess}
       />
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className={`fixed bottom-8 right-8 ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
+          {toastType === 'success' ? (
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          ) : (
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          )}
+          <span className="font-medium">{toastMessage}</span>
+          <button
+            onClick={() => setShowToast(false)}
+            className="ml-4 text-white hover:text-gray-200 cursor-pointer"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

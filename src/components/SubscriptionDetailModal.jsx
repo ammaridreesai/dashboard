@@ -7,40 +7,16 @@ import 'react-responsive-modal/styles.css';
 export default function SubscriptionDetailModal({ open, onClose, subscription }) {
   if (!subscription) return null;
 
-  const [expandedSections, setExpandedSections] = useState([0]); // First section expanded by default
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  const toggleSection = (index) => {
-    setExpandedSections(prev =>
-      prev.includes(index)
-        ? prev.filter(i => i !== index)
-        : [...prev, index]
-    );
+  const toggleSection = () => {
+    setIsExpanded(prev => !prev);
   };
 
-  // Mock subscription details - you can replace with real data
-  const subscriptionDetails = [
-    {
-      type: 'Monthly Subscription',
-      amount: '£4.99',
-      startDate: '30 July 2025',
-      endDate: '30 Aug 2025',
-      cardEnding: '1349'
-    },
-    {
-      type: 'Monthly Subscription',
-      amount: '£4.99',
-      startDate: '30 July 2025',
-      endDate: '30 Aug 2025',
-      cardEnding: '1349'
-    },
-    {
-      type: 'Monthly Subscription',
-      amount: '£4.99',
-      startDate: '30 July 2025',
-      endDate: '30 Aug 2025',
-      cardEnding: '1349'
-    }
-  ];
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  };
 
   const closeIcon = (
     <svg
@@ -108,56 +84,54 @@ export default function SubscriptionDetailModal({ open, onClose, subscription })
           </div>
         </div>
 
-        {/* Subscription Sections */}
-        <div className="space-y-3 mb-6">
-          {subscriptionDetails.map((detail, index) => (
-            <div key={index} className="bg-[#1E2532] rounded-lg overflow-hidden">
-              {/* Section Header */}
-              <button
-                onClick={() => toggleSection(index)}
-                className="w-full flex items-center justify-between px-4 py-3 text-white hover:bg-[#2A3441] transition-colors cursor-pointer"
+        {/* Subscription Section */}
+        <div className="mb-6">
+          <div className="bg-[#1E2532] rounded-lg overflow-hidden">
+            {/* Section Header */}
+            <button
+              onClick={toggleSection}
+              className="w-full flex items-center justify-between px-4 py-3 text-white hover:bg-[#2A3441] transition-colors cursor-pointer"
+            >
+              <span className="font-medium">{subscription.subscriptionType} Subscription</span>
+              <svg
+                className={`w-5 h-5 transition-transform ${
+                  isExpanded ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <span className="font-medium">{detail.type}</span>
-                <svg
-                  className={`w-5 h-5 transition-transform ${
-                    expandedSections.includes(index) ? 'rotate-180' : ''
-                  }`}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
 
-              {/* Section Content */}
-              {expandedSections.includes(index) && (
-                <div className="px-4 pb-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Amount</span>
-                    <span className="text-white">{detail.amount}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Start Date</span>
-                    <span className="text-white">{detail.startDate}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">End Date</span>
-                    <span className="text-white">{detail.endDate}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Card Ending</span>
-                    <span className="text-white">{detail.cardEnding}</span>
-                  </div>
+            {/* Section Content */}
+            {isExpanded && (
+              <div className="px-4 pb-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Amount</span>
+                  <span className="text-white">{subscription.currency === 'GBP' ? '£' : subscription.currency}{subscription.amount}</span>
                 </div>
-              )}
-            </div>
-          ))}
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Start Date</span>
+                  <span className="text-white">{formatDate(subscription.subscriptionStartDate)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">End Date</span>
+                  <span className="text-white">{formatDate(subscription.subscriptionEndDate)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-400">Card Ending</span>
+                  <span className="text-white">{subscription.cardLast4Digits}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Back Button */}

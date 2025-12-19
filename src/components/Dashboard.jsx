@@ -5,7 +5,6 @@ import Header from "./Header";
 import apiClient from "../services/api";
 
 export default function Dashboard() {
-  const [selectedMonth, setSelectedMonth] = useState("Nov-2026");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
@@ -151,129 +150,132 @@ export default function Dashboard() {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* App Downloads Overview */}
-          <div className="bg-[#1E2532] rounded-xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-white text-xl font-semibold">
-                App Downloads Overview
-              </h2>
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option>Nov-2026</option>
-                <option>Oct-2026</option>
-                <option>Sep-2026</option>
-              </select>
+          <div className="bg-[#1E2532] rounded-xl p-6 relative">
+            <div className="blur-sm pointer-events-none">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-white text-xl font-semibold">
+                  App Downloads Overview
+                </h2>
+                <select
+                  className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option>Nov-2026</option>
+                  <option>Oct-2026</option>
+                  <option>Sep-2026</option>
+                </select>
+              </div>
+
+              <div className="relative">
+                <div className="absolute left-0 top-0 flex flex-col justify-between h-48 text-gray-400 text-xs pr-2">
+                  <span>100</span>
+                  <span>75</span>
+                  <span>50</span>
+                  <span>25</span>
+                  <span>0</span>
+                </div>
+
+                <div className="ml-8 relative h-48">
+                  <svg
+                    className="w-full h-full"
+                    viewBox="0 0 600 200"
+                    preserveAspectRatio="none"
+                  >
+                    <line
+                      x1="0"
+                      y1="0"
+                      x2="600"
+                      y2="0"
+                      stroke="#374151"
+                      strokeWidth="1"
+                    />
+                    <line
+                      x1="0"
+                      y1="50"
+                      x2="600"
+                      y2="50"
+                      stroke="#374151"
+                      strokeWidth="1"
+                    />
+                    <line
+                      x1="0"
+                      y1="100"
+                      x2="600"
+                      y2="100"
+                      stroke="#374151"
+                      strokeWidth="1"
+                    />
+                    <line
+                      x1="0"
+                      y1="150"
+                      x2="600"
+                      y2="150"
+                      stroke="#374151"
+                      strokeWidth="1"
+                    />
+                    <line
+                      x1="0"
+                      y1="200"
+                      x2="600"
+                      y2="200"
+                      stroke="#374151"
+                      strokeWidth="1"
+                    />
+
+                    <defs>
+                      <linearGradient
+                        id="lineGradient"
+                        x1="0%"
+                        y1="0%"
+                        x2="0%"
+                        y2="100%"
+                      >
+                        <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+
+                    <polygon
+                      fill="url(#lineGradient)"
+                      points="0,150 100,120 200,130 300,110 400,80 500,60 600,70 600,200 0,200"
+                    />
+
+                    <polyline
+                      fill="none"
+                      stroke="#22c55e"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points="0,150 100,120 200,130 300,110 400,80 500,60 600,70"
+                    />
+
+                    <circle cx="0" cy="150" r="4" fill="#22c55e" />
+                    <circle cx="100" cy="120" r="4" fill="#22c55e" />
+                    <circle cx="200" cy="130" r="4" fill="#22c55e" />
+                    <circle cx="300" cy="110" r="4" fill="#22c55e" />
+                    <circle cx="400" cy="80" r="4" fill="#22c55e" />
+                    <circle cx="500" cy="60" r="4" fill="#22c55e" />
+                    <circle cx="600" cy="70" r="4" fill="#22c55e" />
+                  </svg>
+                </div>
+
+                <div className="ml-8 flex justify-between text-gray-400 text-xs mt-2">
+                  <span>1st week</span>
+                  <span>2nd week</span>
+                  <span>3rd week</span>
+                  <span>4th week</span>
+                </div>
+              </div>
             </div>
 
-            {/* Chart Container */}
-            <div className="relative">
-              {/* Y-axis labels */}
-              <div className="absolute left-0 top-0 flex flex-col justify-between h-48 text-gray-400 text-xs pr-2">
-                <span>100</span>
-                <span>75</span>
-                <span>50</span>
-                <span>25</span>
-                <span>0</span>
-              </div>
-
-              {/* Chart */}
-              <div className="ml-8 relative h-48">
-                <svg
-                  className="w-full h-full"
-                  viewBox="0 0 600 200"
-                  preserveAspectRatio="none"
-                >
-                  {/* Grid lines */}
-                  <line
-                    x1="0"
-                    y1="0"
-                    x2="600"
-                    y2="0"
-                    stroke="#374151"
-                    strokeWidth="1"
-                  />
-                  <line
-                    x1="0"
-                    y1="50"
-                    x2="600"
-                    y2="50"
-                    stroke="#374151"
-                    strokeWidth="1"
-                  />
-                  <line
-                    x1="0"
-                    y1="100"
-                    x2="600"
-                    y2="100"
-                    stroke="#374151"
-                    strokeWidth="1"
-                  />
-                  <line
-                    x1="0"
-                    y1="150"
-                    x2="600"
-                    y2="150"
-                    stroke="#374151"
-                    strokeWidth="1"
-                  />
-                  <line
-                    x1="0"
-                    y1="200"
-                    x2="600"
-                    y2="200"
-                    stroke="#374151"
-                    strokeWidth="1"
-                  />
-
-                  {/* Line chart with gradient */}
-                  <defs>
-                    <linearGradient
-                      id="lineGradient"
-                      x1="0%"
-                      y1="0%"
-                      x2="0%"
-                      y2="100%"
-                    >
-                      <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Area under the line */}
-                  <polygon
-                    fill="url(#lineGradient)"
-                    points="0,150 100,120 200,130 300,110 400,80 500,60 600,70 600,200 0,200"
-                  />
-
-                  {/* Line */}
-                  <polyline
-                    fill="none"
-                    stroke="#22c55e"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    points="0,150 100,120 200,130 300,110 400,80 500,60 600,70"
-                  />
-
-                  {/* Data points */}
-                  <circle cx="0" cy="150" r="4" fill="#22c55e" />
-                  <circle cx="100" cy="120" r="4" fill="#22c55e" />
-                  <circle cx="200" cy="130" r="4" fill="#22c55e" />
-                  <circle cx="300" cy="110" r="4" fill="#22c55e" />
-                  <circle cx="400" cy="80" r="4" fill="#22c55e" />
-                  <circle cx="500" cy="60" r="4" fill="#22c55e" />
-                  <circle cx="600" cy="70" r="4" fill="#22c55e" />
-                </svg>
-              </div>
-
-              {/* X-axis labels */}
-              <div className="ml-8 flex justify-between text-gray-400 text-xs mt-2">
-                <span>1st week</span>
-                <span>2nd week</span>
-                <span>3rd week</span>
-                <span>4th week</span>
+            {/* Under Development Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center bg-[#1E2532]/50 rounded-xl">
+              <div className="text-center">
+                <div className="text-yellow-500 text-lg font-semibold mb-2">
+                  Under Development
+                </div>
+                <div className="text-gray-400 text-sm">
+                  This feature is coming soon
+                </div>
               </div>
             </div>
           </div>
@@ -285,8 +287,21 @@ export default function Dashboard() {
             </h2>
 
             {isLoadingSubscriptions ? (
-              <div className="flex items-center justify-center h-48">
-                <div className="text-gray-400">Loading...</div>
+              <div className="flex items-center justify-between animate-pulse">
+                {/* Skeleton for Donut Chart */}
+                <div className="w-48 h-48 rounded-full bg-gray-700"></div>
+
+                {/* Skeleton for Legend */}
+                <div className="space-y-4 flex-1 ml-8">
+                  {Array(4)
+                    .fill(0)
+                    .map((_, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <div className="w-3 h-3 rounded-full bg-gray-700"></div>
+                        <div className="h-4 bg-gray-700 rounded w-40"></div>
+                      </div>
+                    ))}
+                </div>
               </div>
             ) : (
               <div className="flex items-center justify-between">

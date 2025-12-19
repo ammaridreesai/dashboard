@@ -35,10 +35,19 @@ export default function Home() {
   };
 
   const handleLogout = () => {
+    // Call auth service logout to clear localStorage and sessionStorage
     authService.logout();
+
+    // Reset all state to initial values
     setIsAuthenticated(false);
     setUser(null);
     setActiveView('dashboard');
+
+    // Force a page reload to ensure complete cleanup
+    // This prevents any cached data from lingering in memory
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
   };
 
   if (isLoading) {

@@ -40,9 +40,17 @@ export const authService = {
 
   logout() {
     if (typeof window !== "undefined") {
+      // Clear all authentication related data from localStorage
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("user");
+
+      // Clear sessionStorage as well if you're using it
+      sessionStorage.clear();
+
+      // Optional: Clear all localStorage completely
+      // Uncomment if you want to clear everything
+      // localStorage.clear();
     }
   },
 

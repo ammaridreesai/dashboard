@@ -1,74 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "./Header";
 import SubscriptionDetailModal from "./SubscriptionDetailModal";
+import apiClient from "../services/api";
 
 export default function Subscriptions() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [selectedSubscription, setSelectedSubscription] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Sample subscription data matching the screenshot
-  const [subscriptions] = useState([
-    {
-      id: 1,
-      name: "Henry",
-      email: "harrid@gmail.com",
-      subscriptionType: "Monthly",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Sara Khan",
-      email: "sara.n@gmail.com",
-      subscriptionType: "Monthly",
-      status: "Active",
-    },
-    {
-      id: 3,
-      name: "John Doe",
-      email: "john.d@gmail.com",
-      subscriptionType: "Yearly",
-      status: "Inactive",
-    },
-    {
-      id: 4,
-      name: "sara.n@gmail.com",
-      email: "sara.n@gmail.com",
-      subscriptionType: "Monthly",
-      status: "Active",
-    },
-    {
-      id: 5,
-      name: "Michael Smith",
-      email: "michael@gmail.com",
-      subscriptionType: "Yearly",
-      status: "Active",
-    },
-    {
-      id: 6,
-      name: "John Doe",
-      email: "john.d@gmail.com",
-      subscriptionType: "Yearly",
-      status: "Inactive",
-    },
-    {
-      id: 7,
-      name: "Sara Khan",
-      email: "sara.n@gmail.com",
-      subscriptionType: "Monthly",
-      status: "Inactive",
-    },
-    {
-      id: 8,
-      name: "Michael Smith",
-      email: "michael@gmail.com",
-      subscriptionType: "Monthly",
-      status: "Inactive",
-    },
-  ]);
+  useEffect(() => {
+    const fetchSubscriptions = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get("/users/dashboard/subscription-status");
+
+        if (response.data.isRequestSuccessful && response.data.successResponse) {
+          const formattedData = response.data.successResponse.map((sub, index) => ({
+            id: index + 1,
+            name: sub.name,
+            email: sub.email,
+            subscriptionType: sub.subscriptionType,
+            status: sub.status,
+            paymentMethod: sub.paymentMethod,
+            amount: sub.amount,
+            currency: sub.currency,
+            cardLast4Digits: sub.cardLast4Digits,
+            isActive: sub.isActive,
+            subscriptionStartDate: sub.subscriptionStartDate,
+            subscriptionEndDate: sub.subscriptionEndDate,
+          }));
+          setSubscriptions(formattedData);
+        } else {
+          setError("Failed to load subscriptions");
+        }
+      } catch (err) {
+        setError("Error fetching subscriptions: " + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubscriptions();
+  }, []);
 
   // Filter subscriptions based on search term
   const filteredSubscriptions = subscriptions.filter(
@@ -234,101 +213,125 @@ export default function Subscriptions() {
             </div>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-500/10 border border-red-500 rounded-lg p-4 text-red-500">
+              {error}
+            </div>
+          )}
+
           {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-700">
-                  <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
-                    onClick={() => handleSort("name")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Name
-                      <SortIcon columnKey="name" />
-                    </div>
-                  </th>
-                  <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
-                    onClick={() => handleSort("email")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Email
-                      <SortIcon columnKey="email" />
-                    </div>
-                  </th>
-                  <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
-                    onClick={() => handleSort("subscriptionType")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Subscription Type
-                      <SortIcon columnKey="subscriptionType" />
-                    </div>
-                  </th>
-                  <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
-                    onClick={() => handleSort("status")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Status
-                      <SortIcon columnKey="status" />
-                    </div>
-                  </th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedSubscriptions.map((subscription) => (
-                  <tr
-                    key={subscription.id}
-                    className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
-                  >
-                    <td className="py-4 px-4 text-gray-200">{subscription.name}</td>
-                    <td className="py-4 px-4 text-gray-200">{subscription.email}</td>
-                    <td className="py-4 px-4 text-gray-200">
-                      {subscription.subscriptionType}
-                    </td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`${getStatusColor(
-                          subscription.status
-                        )} text-white px-3 py-1 rounded-full text-sm font-medium`}
-                      >
-                        {subscription.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4">
-                      <button
-                        onClick={() => handleViewSubscription(subscription)}
-                        className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                      </button>
-                    </td>
+          {!loading && !error && (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-700">
+                    <th
+                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      onClick={() => handleSort("name")}
+                    >
+                      <div className="flex items-center gap-2">
+                        Name
+                        <SortIcon columnKey="name" />
+                      </div>
+                    </th>
+                    <th
+                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      onClick={() => handleSort("email")}
+                    >
+                      <div className="flex items-center gap-2">
+                        Email
+                        <SortIcon columnKey="email" />
+                      </div>
+                    </th>
+                    <th
+                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      onClick={() => handleSort("subscriptionType")}
+                    >
+                      <div className="flex items-center gap-2">
+                        Subscription Type
+                        <SortIcon columnKey="subscriptionType" />
+                      </div>
+                    </th>
+                    <th
+                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      onClick={() => handleSort("status")}
+                    >
+                      <div className="flex items-center gap-2">
+                        Status
+                        <SortIcon columnKey="status" />
+                      </div>
+                    </th>
+                    <th className="text-left py-3 px-4 text-gray-300 font-medium"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {sortedSubscriptions.length > 0 ? (
+                    sortedSubscriptions.map((subscription) => (
+                      <tr
+                        key={subscription.id}
+                        className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
+                      >
+                        <td className="py-4 px-4 text-gray-200">{subscription.name}</td>
+                        <td className="py-4 px-4 text-gray-200">{subscription.email}</td>
+                        <td className="py-4 px-4 text-gray-200">
+                          {subscription.subscriptionType}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span
+                            className={`${getStatusColor(
+                              subscription.status
+                            )} text-white px-3 py-1 rounded-full text-sm font-medium`}
+                          >
+                            {subscription.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <button
+                            onClick={() => handleViewSubscription(subscription)}
+                            className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              />
+                            </svg>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="py-8 text-center text-gray-400">
+                        No subscriptions found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 

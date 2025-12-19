@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { Modal } from 'react-responsive-modal';
 import 'react-responsive-modal/styles.css';
+import apiClient from '../services/api';
 
-export default function AssignPromoModal({ open, onClose, user, promoCodes }) {
+export default function AssignPromoModal({ open, onClose, user, promoCodes, onAssignSuccess }) {
   const [selectedPromoType, setSelectedPromoType] = useState('monthly');
   const [selectedPromoCode, setSelectedPromoCode] = useState('');
+  const [isAssigning, setIsAssigning] = useState(false);
 
   if (!user) return null;
 
@@ -15,28 +17,49 @@ export default function AssignPromoModal({ open, onClose, user, promoCodes }) {
     (promo) => promo.promoType === selectedPromoType && !promo.isUsed
   );
 
-  const handleAssign = () => {
+  const handleAssign = async () => {
     if (!selectedPromoCode) {
-      alert('Please select a promo code');
+      if (onAssignSuccess) {
+        onAssignSuccess('Please select a promo code', false);
+      }
       return;
     }
 
-    console.log('Assigning promo:', {
-      userId: user.id,
-      promoCode: selectedPromoCode,
-    });
+    setIsAssigning(true);
+    try {
+      const userId = user.id || user.userId;
+      console.log('Assigning promo:', { userId, promoCode: selectedPromoCode });
 
-    // Show success toast
-    const toast = document.createElement('div');
-    toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-    toast.textContent = 'Promo assigned successfully!';
-    document.body.appendChild(toast);
+      const response = await apiClient.post('/promo-codes/apply', {
+        userId: userId,
+        promoCode: selectedPromoCode,
+      });
 
-    setTimeout(() => {
-      toast.remove();
-    }, 3000);
-
-    onClose();
+      if (response.data.isRequestSuccessful) {
+        // Success
+        if (onAssignSuccess) {
+          onAssignSuccess('Promo code assigned successfully!', true);
+        }
+        onClose();
+        // Reset selections
+        setSelectedPromoCode('');
+        setSelectedPromoType('monthly');
+      } else {
+        // Error from API
+        const errorMessage = response.data.errorDetail?.message || 'Failed to assign promo code';
+        if (onAssignSuccess) {
+          onAssignSuccess(errorMessage, false);
+        }
+      }
+    } catch (error) {
+      console.error('Error assigning promo code:', error);
+      const errorMessage = error.response?.data?.errorDetail?.message || 'An error occurred while assigning the promo code';
+      if (onAssignSuccess) {
+        onAssignSuccess(errorMessage, false);
+      }
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   const closeIcon = (
@@ -140,15 +163,21 @@ export default function AssignPromoModal({ open, onClose, user, promoCodes }) {
         <div className="flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="bg-gray-600 text-white py-2 px-6 rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors cursor-pointer"
+            disabled={isAssigning}
+            className={`bg-gray-600 text-white py-2 px-6 rounded-lg text-sm font-medium transition-colors ${
+              isAssigning ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-700 cursor-pointer'
+            }`}
           >
             Cancel
           </button>
           <button
             onClick={handleAssign}
-            className="bg-white text-gray-800 py-2 px-6 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors cursor-pointer"
+            disabled={isAssigning}
+            className={`bg-white text-gray-800 py-2 px-6 rounded-lg text-sm font-medium transition-colors ${
+              isAssigning ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100 cursor-pointer'
+            }`}
           >
-            Assign
+            {isAssigning ? 'Assigning...' : 'Assign'}
           </button>
         </div>
       </div>
