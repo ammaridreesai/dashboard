@@ -206,7 +206,7 @@ export default function LoginForm({ onLoginSuccess }) {
             </div>
 
             {/* Forgot Password Link */}
-            <div className="flex justify-end">
+            {/* <div className="flex justify-end">
               <button
                 type="button"
                 onClick={() => setShowForgotPassword(true)}
@@ -214,7 +214,7 @@ export default function LoginForm({ onLoginSuccess }) {
               >
                 Forgot Password?
               </button>
-            </div>
+            </div> */}
 
             {/* Login Button */}
             <button
