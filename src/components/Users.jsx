@@ -1,114 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import UserDetailModal from "./UserDetailModal";
 import Header from "./Header";
+import apiClient from "../services/api";
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Sample user data matching the screenshot
-  const [users] = useState([
-    {
-      id: 1,
-      name: "Ali Farhan",
-      email: "ali@gmail.com",
-      role: "Ali Farhan",
-      signupMethod: "Google",
-      createdAt: "Jan-20-2025",
-      status: "Active",
-      plan: "Free",
-      gender: "Male",
-      location: "United States",
-    },
-    {
-      id: 2,
-      name: "Sara Khan",
-      email: "sara.n@gmail.com",
-      role: "Sara Khan",
-      signupMethod: "Apple",
-      createdAt: "Feb-15-2024",
-      status: "Active",
-      plan: "Paid",
-      gender: "Female",
-      location: "Canada",
-    },
-    {
-      id: 3,
-      name: "John Doe",
-      email: "john.d@gmail.com",
-      role: "John Doe",
-      signupMethod: "Email",
-      createdAt: "Mar-10-2023",
-      status: "Banned",
-      plan: "Free",
-      gender: "Male",
-      location: "United Kingdom",
-    },
-    {
-      id: 4,
-      name: "Emily Chen",
-      email: "sara.n@gmail.com",
-      role: "Emily Chen",
-      signupMethod: "Guest",
-      createdAt: "Apr-05-2026",
-      status: "Active",
-      plan: "Paid",
-      gender: "Female",
-      location: "Australia",
-    },
-    {
-      id: 5,
-      name: "Michael Smith",
-      email: "michael@gmail.com",
-      role: "Michael Smith",
-      signupMethod: "Apple",
-      createdAt: "May-12-2023",
-      status: "Pending",
-      plan: "Free",
-      gender: "Male",
-      location: "United States",
-    },
-    {
-      id: 6,
-      name: "Rachel Green",
-      email: "john.d@gmail.com",
-      role: "Rachel Green",
-      signupMethod: "Email",
-      createdAt: "Jun-01-2025",
-      status: "Banned",
-      plan: "Free",
-      gender: "Female",
-      location: "United Kingdom",
-    },
-    {
-      id: 7,
-      name: "David Lee",
-      email: "sara.n@gmail.com",
-      role: "David Lee",
-      signupMethod: "Apple",
-      createdAt: "Jul-20-2024",
-      status: "Pending",
-      plan: "Paid",
-      gender: "Male",
-      location: "Singapore",
-    },
-    {
-      id: 8,
-      name: "Olivia Brown",
-      email: "michael@gmail.com",
-      role: "Olivia Brown",
-      signupMethod: "Google",
-      createdAt: "Aug-30-2023",
-      status: "Active",
-      plan: "Free",
-      gender: "Female",
-      location: "New Zealand",
-    },
-  ]);
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await apiClient.get("/users/dashboard/all-users");
+        if (response.data.isRequestSuccessful) {
+          setUsers(response.data.successResponse);
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleViewUser = (user) => {
     setSelectedUser(user);
@@ -348,58 +268,72 @@ export default function Users() {
                 </tr>
               </thead>
               <tbody>
-                {sortedUsers.map((user) => (
-                  <tr
-                    key={user.id}
-                    className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
-                  >
-                    <td className="py-4 px-4 text-gray-200">{user.name}</td>
-                    <td className="py-4 px-4 text-gray-200">{user.email}</td>
-                    <td className="py-4 px-4 text-gray-200">{user.role}</td>
-                    <td className="py-4 px-4 text-gray-200">
-                      {user.signupMethod}
-                    </td>
-                    <td className="py-4 px-4 text-gray-200">
-                      {user.createdAt}
-                    </td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`${getStatusColor(
-                          user.status
-                        )} text-white px-3 py-1 rounded-full text-sm font-medium`}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-gray-200">{user.plan}</td>
-                    <td className="py-4 px-4">
-                      <button
-                        onClick={() => handleViewUser(user)}
-                        className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                      </button>
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="8" className="py-8 text-center">
+                      <div className="text-gray-400">Loading users...</div>
                     </td>
                   </tr>
-                ))}
+                ) : sortedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" className="py-8 text-center">
+                      <div className="text-gray-400">No users found</div>
+                    </td>
+                  </tr>
+                ) : (
+                  sortedUsers.map((user) => (
+                    <tr
+                      key={user.userId || user.id}
+                      className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
+                    >
+                      <td className="py-4 px-4 text-gray-200">{user.name}</td>
+                      <td className="py-4 px-4 text-gray-200">{user.email}</td>
+                      <td className="py-4 px-4 text-gray-200">{user.role}</td>
+                      <td className="py-4 px-4 text-gray-200">
+                        {user.signupMethod}
+                      </td>
+                      <td className="py-4 px-4 text-gray-200">
+                        {user.createdAt}
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`${getStatusColor(
+                            user.status
+                          )} text-white px-3 py-1 rounded-full text-sm font-medium`}
+                        >
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-gray-200">{user.plan}</td>
+                      <td className="py-4 px-4">
+                        <button
+                          onClick={() => handleViewUser(user)}
+                          className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -1,80 +1,90 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Header from './Header';
-
-// Dummy data
-const statsCards = [
-  { title: 'Total Users', value: '100k', bgColor: 'bg-[#1E2532]' },
-  { title: 'Active Users', value: '60k', bgColor: 'bg-[#1E2532]' },
-  { title: 'Premium Accounts', value: '40k', bgColor: 'bg-[#1E2532]' },
-  { title: 'Free Accounts', value: '20k', bgColor: 'bg-[#1E2532]' },
-];
-
-const subscriptionData = [
-  { label: 'Monthly Subscriptions', color: 'bg-emerald-500', percentage: 35 },
-  { label: 'Yearly Subscriptions', color: 'bg-yellow-500', percentage: 25 },
-  { label: 'Without Subscription', color: 'bg-red-500', percentage: 25 },
-  { label: 'Free Trials', color: 'bg-gray-300', percentage: 15 },
-];
-
-const usersData = [
-  {
-    name: 'Ali Farhan',
-    email: 'ali@gmail.com',
-    role: 'Ali Farhan',
-    signupMethod: 'Google',
-    createdAt: 'Jan-20-2025',
-    status: 'Active',
-    plan: 'Free',
-  },
-  {
-    name: 'John Doe',
-    email: 'john.d@gmail.com',
-    role: 'John Doe',
-    signupMethod: 'Email',
-    createdAt: 'Mar-10-2023',
-    status: 'Banned',
-    plan: 'Free',
-  },
-  {
-    name: 'sara.n@gmail.com',
-    email: 'sara.n@gmail.com',
-    role: 'Emily Chen',
-    signupMethod: 'Guest',
-    createdAt: 'Apr-05-2026',
-    status: 'Active',
-    plan: 'Paid',
-  },
-  {
-    name: 'Sara Khan',
-    email: 'sara.n@gmail.com',
-    role: 'David Lee',
-    signupMethod: 'Apple',
-    createdAt: 'Jul-20-2024',
-    status: 'Pending',
-    plan: 'Paid',
-  },
-  {
-    name: 'Michael Smith',
-    email: 'michael@gmail.com',
-    role: 'Olivia Brown',
-    signupMethod: 'Google',
-    createdAt: 'Aug-30-2023',
-    status: 'Active',
-    plan: 'Free',
-  },
-];
+import { useState, useEffect } from "react";
+import Header from "./Header";
+import apiClient from "../services/api";
 
 export default function Dashboard() {
-  const [selectedMonth, setSelectedMonth] = useState('Nov-2026');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState('');
-  const [sortDirection, setSortDirection] = useState('asc');
+  const [selectedMonth, setSelectedMonth] = useState("Nov-2026");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState("");
+  const [sortDirection, setSortDirection] = useState("asc");
+  const [statsCards, setStatsCards] = useState([
+    { title: "Total Users", value: "0", bgColor: "bg-[#1E2532]" },
+    { title: "Active Users", value: "0", bgColor: "bg-[#1E2532]" },
+    { title: "Premium Accounts", value: "0", bgColor: "bg-[#1E2532]" },
+    { title: "Free Accounts", value: "0", bgColor: "bg-[#1E2532]" },
+  ]);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [subscriptionData, setSubscriptionData] = useState([]);
+  const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(true);
+  const [usersData, setUsersData] = useState([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+
+  const getColorByLabel = (label) => {
+    const colorMap = {
+      "Monthly Subscriptions": "bg-emerald-500",
+      "Yearly Subscriptions": "bg-yellow-500",
+      "Without Subscription": "bg-red-500",
+      "Free Trials": "bg-gray-300",
+    };
+    return colorMap[label] || "bg-gray-400";
+  };
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch user stats
+        const userStatsResponse = await apiClient.get(
+          "/users/dashboard/user-stats"
+        );
+        if (userStatsResponse.data.isRequestSuccessful) {
+          const statsData = userStatsResponse.data.successResponse.map(
+            (stat) => ({
+              title: stat.title,
+              value: stat.value,
+              bgColor: "bg-[#1E2532]",
+            })
+          );
+          setStatsCards(statsData);
+        }
+        setIsLoadingStats(false);
+
+        // Fetch subscription stats
+        const subscriptionStatsResponse = await apiClient.get(
+          "/users/dashboard/subscription-stats"
+        );
+        if (subscriptionStatsResponse.data.isRequestSuccessful) {
+          const subscriptionStatsData =
+            subscriptionStatsResponse.data.successResponse.map((stat) => ({
+              label: stat.label,
+              percentage: stat.percentage,
+              color: getColorByLabel(stat.label),
+            }));
+          setSubscriptionData(subscriptionStatsData);
+        }
+        setIsLoadingSubscriptions(false);
+
+        // Fetch all users
+        const allUsersResponse = await apiClient.get("/users/dashboard/all-users");
+        if (allUsersResponse.data.isRequestSuccessful) {
+          setUsersData(allUsersResponse.data.successResponse);
+        }
+        setIsLoadingUsers(false);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        setIsLoadingStats(false);
+        setIsLoadingSubscriptions(false);
+        setIsLoadingUsers(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
   // Filter and sort users
   const filteredAndSortedUsers = usersData
-    .filter(user => {
+    .filter((user) => {
       const query = searchQuery.toLowerCase();
       return (
         user.name.toLowerCase().includes(query) ||
@@ -91,7 +101,7 @@ export default function Dashboard() {
       const aValue = a[sortField].toString().toLowerCase();
       const bValue = b[sortField].toString().toLowerCase();
 
-      if (sortDirection === 'asc') {
+      if (sortDirection === "asc") {
         return aValue > bValue ? 1 : -1;
       } else {
         return aValue < bValue ? 1 : -1;
@@ -100,10 +110,10 @@ export default function Dashboard() {
 
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
@@ -117,12 +127,25 @@ export default function Dashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {statsCards.map((card, index) => (
-            <div key={index} className={`${card.bgColor} rounded-xl p-6`}>
-              <h3 className="text-gray-400 text-sm mb-2">{card.title}</h3>
-              <p className="text-white text-3xl font-bold">{card.value}</p>
-            </div>
-          ))}
+          {isLoadingStats
+            ? // Loading skeleton
+              Array(4)
+                .fill(0)
+                .map((_, index) => (
+                  <div
+                    key={index}
+                    className="bg-[#1E2532] rounded-xl p-6 animate-pulse"
+                  >
+                    <div className="h-4 bg-gray-700 rounded w-24 mb-2"></div>
+                    <div className="h-8 bg-gray-700 rounded w-16"></div>
+                  </div>
+                ))
+            : statsCards.map((card, index) => (
+                <div key={index} className={`${card.bgColor} rounded-xl p-6`}>
+                  <h3 className="text-gray-400 text-sm mb-2">{card.title}</h3>
+                  <p className="text-white text-3xl font-bold">{card.value}</p>
+                </div>
+              ))}
         </div>
 
         {/* Charts Section */}
@@ -130,7 +153,9 @@ export default function Dashboard() {
           {/* App Downloads Overview */}
           <div className="bg-[#1E2532] rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-white text-xl font-semibold">App Downloads Overview</h2>
+              <h2 className="text-white text-xl font-semibold">
+                App Downloads Overview
+              </h2>
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
@@ -155,17 +180,62 @@ export default function Dashboard() {
 
               {/* Chart */}
               <div className="ml-8 relative h-48">
-                <svg className="w-full h-full" viewBox="0 0 600 200" preserveAspectRatio="none">
+                <svg
+                  className="w-full h-full"
+                  viewBox="0 0 600 200"
+                  preserveAspectRatio="none"
+                >
                   {/* Grid lines */}
-                  <line x1="0" y1="0" x2="600" y2="0" stroke="#374151" strokeWidth="1" />
-                  <line x1="0" y1="50" x2="600" y2="50" stroke="#374151" strokeWidth="1" />
-                  <line x1="0" y1="100" x2="600" y2="100" stroke="#374151" strokeWidth="1" />
-                  <line x1="0" y1="150" x2="600" y2="150" stroke="#374151" strokeWidth="1" />
-                  <line x1="0" y1="200" x2="600" y2="200" stroke="#374151" strokeWidth="1" />
+                  <line
+                    x1="0"
+                    y1="0"
+                    x2="600"
+                    y2="0"
+                    stroke="#374151"
+                    strokeWidth="1"
+                  />
+                  <line
+                    x1="0"
+                    y1="50"
+                    x2="600"
+                    y2="50"
+                    stroke="#374151"
+                    strokeWidth="1"
+                  />
+                  <line
+                    x1="0"
+                    y1="100"
+                    x2="600"
+                    y2="100"
+                    stroke="#374151"
+                    strokeWidth="1"
+                  />
+                  <line
+                    x1="0"
+                    y1="150"
+                    x2="600"
+                    y2="150"
+                    stroke="#374151"
+                    strokeWidth="1"
+                  />
+                  <line
+                    x1="0"
+                    y1="200"
+                    x2="600"
+                    y2="200"
+                    stroke="#374151"
+                    strokeWidth="1"
+                  />
 
                   {/* Line chart with gradient */}
                   <defs>
-                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <linearGradient
+                      id="lineGradient"
+                      x1="0%"
+                      y1="0%"
+                      x2="0%"
+                      y2="100%"
+                    >
                       <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
                       <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
                     </linearGradient>
@@ -210,82 +280,84 @@ export default function Dashboard() {
 
           {/* Subscriptions Overview */}
           <div className="bg-[#1E2532] rounded-xl p-6">
-            <h2 className="text-white text-xl font-semibold mb-6">Subscriptions Overview</h2>
+            <h2 className="text-white text-xl font-semibold mb-6">
+              Subscriptions Overview
+            </h2>
 
-            <div className="flex items-center justify-between">
-              {/* Donut Chart */}
-              <div className="relative w-48 h-48">
-                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  {/* Background circle */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke="#1E2532"
-                    strokeWidth="15"
-                  />
-
-                  {/* Green segment (Monthly) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke="#22c55e"
-                    strokeWidth="15"
-                    strokeDasharray="87.5 250"
-                    strokeDashoffset="0"
-                  />
-
-                  {/* Yellow segment (Yearly) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke="#eab308"
-                    strokeWidth="15"
-                    strokeDasharray="62.5 250"
-                    strokeDashoffset="-87.5"
-                  />
-
-                  {/* Red segment (Without) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke="#ef4444"
-                    strokeWidth="15"
-                    strokeDasharray="62.5 250"
-                    strokeDashoffset="-150"
-                  />
-
-                  {/* Gray segment (Free Trials) */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="40"
-                    fill="none"
-                    stroke="#d1d5db"
-                    strokeWidth="15"
-                    strokeDasharray="37.5 250"
-                    strokeDashoffset="-212.5"
-                  />
-                </svg>
+            {isLoadingSubscriptions ? (
+              <div className="flex items-center justify-center h-48">
+                <div className="text-gray-400">Loading...</div>
               </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                {/* Donut Chart */}
+                <div className="relative w-48 h-48">
+                  <svg
+                    className="w-full h-full transform -rotate-90"
+                    viewBox="0 0 100 100"
+                  >
+                    {/* Background circle */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="none"
+                      stroke="#1E2532"
+                      strokeWidth="15"
+                    />
 
-              {/* Legend */}
-              <div className="space-y-4">
-                {subscriptionData.map((item, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                    <span className="text-gray-300 text-sm">{item.label}</span>
-                  </div>
-                ))}
+                    {/* Dynamic segments based on API data */}
+                    {(() => {
+                      let cumulativeOffset = 0;
+                      const circumference = 2 * Math.PI * 40;
+
+                      const colorTailwindToHex = {
+                        "bg-emerald-500": "#22c55e",
+                        "bg-yellow-500": "#eab308",
+                        "bg-red-500": "#ef4444",
+                        "bg-gray-300": "#d1d5db",
+                        "bg-gray-400": "#9ca3af",
+                      };
+
+                      return subscriptionData.map((item, index) => {
+                        const strokeLength =
+                          (item.percentage / 100) * circumference;
+                        const offset = -cumulativeOffset;
+                        cumulativeOffset += strokeLength;
+
+                        return (
+                          <circle
+                            key={index}
+                            cx="50"
+                            cy="50"
+                            r="40"
+                            fill="none"
+                            stroke={colorTailwindToHex[item.color] || "#9ca3af"}
+                            strokeWidth="15"
+                            strokeDasharray={`${strokeLength} ${circumference}`}
+                            strokeDashoffset={offset}
+                          />
+                        );
+                      });
+                    })()}
+                  </svg>
+                </div>
+
+                {/* Legend */}
+                <div className="space-y-4">
+                  {subscriptionData.map((item, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <div
+                        className={`w-3 h-3 rounded-full ${item.color}`}
+                      ></div>
+                      <span className="text-gray-300 text-sm">
+                        {item.label} ({item.percentage}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -322,72 +394,107 @@ export default function Dashboard() {
                 <tr className="border-b border-gray-700">
                   <th
                     className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
-                    onClick={() => handleSort('name')}
+                    onClick={() => handleSort("name")}
                   >
-                    Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Name{" "}
+                    {sortField === "name" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
                     className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
-                    onClick={() => handleSort('email')}
+                    onClick={() => handleSort("email")}
                   >
-                    Email {sortField === 'email' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Email{" "}
+                    {sortField === "email" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
                     className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
-                    onClick={() => handleSort('role')}
+                    onClick={() => handleSort("role")}
                   >
-                    Role {sortField === 'role' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Role{" "}
+                    {sortField === "role" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
                     className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
-                    onClick={() => handleSort('signupMethod')}
+                    onClick={() => handleSort("signupMethod")}
                   >
-                    Signup Method {sortField === 'signupMethod' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Signup Method{" "}
+                    {sortField === "signupMethod" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
                     className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
-                    onClick={() => handleSort('createdAt')}
+                    onClick={() => handleSort("createdAt")}
                   >
-                    Created At {sortField === 'createdAt' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Created At{" "}
+                    {sortField === "createdAt" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
                     className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
-                    onClick={() => handleSort('status')}
+                    onClick={() => handleSort("status")}
                   >
-                    Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Status{" "}
+                    {sortField === "status" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
                     className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
-                    onClick={() => handleSort('plan')}
+                    onClick={() => handleSort("plan")}
                   >
-                    Plan {sortField === 'plan' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    Plan{" "}
+                    {sortField === "plan" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredAndSortedUsers.map((user, index) => (
-                  <tr key={index} className="border-b border-gray-700 hover:bg-[#2A3441]">
-                    <td className="py-3 px-4 text-white">{user.name}</td>
-                    <td className="py-3 px-4 text-gray-300">{user.email}</td>
-                    <td className="py-3 px-4 text-gray-300">{user.role}</td>
-                    <td className="py-3 px-4 text-gray-300">{user.signupMethod}</td>
-                    <td className="py-3 px-4 text-gray-300">{user.createdAt}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-medium text-white ${
-                          user.status === 'Active'
-                            ? 'bg-emerald-500'
-                            : user.status === 'Banned'
-                            ? 'bg-red-500'
-                            : 'bg-orange-500'
-                        }`}
-                      >
-                        {user.status}
-                      </span>
+                {isLoadingUsers ? (
+                  <tr>
+                    <td colSpan="7" className="py-8 text-center">
+                      <div className="text-gray-400">Loading users...</div>
                     </td>
-                    <td className="py-3 px-4 text-gray-300">{user.plan}</td>
                   </tr>
-                ))}
+                ) : filteredAndSortedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan="7" className="py-8 text-center">
+                      <div className="text-gray-400">No users found</div>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredAndSortedUsers.map((user, index) => (
+                    <tr
+                      key={index}
+                      className="border-b border-gray-700 hover:bg-[#2A3441]"
+                    >
+                      <td className="py-3 px-4 text-white">{user.name}</td>
+                      <td className="py-3 px-4 text-gray-300">{user.email}</td>
+                      <td className="py-3 px-4 text-gray-300">{user.role}</td>
+                      <td className="py-3 px-4 text-gray-300">
+                        {user.signupMethod}
+                      </td>
+                      <td className="py-3 px-4 text-gray-300">
+                        {user.createdAt}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium text-white ${
+                            user.status === "Active"
+                              ? "bg-emerald-500"
+                              : user.status === "Banned"
+                              ? "bg-red-500"
+                              : "bg-orange-500"
+                          }`}
+                        >
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-gray-300">{user.plan}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

@@ -3,24 +3,35 @@
 import { useForm } from "react-hook-form";
 import { useState } from "react";
 import ForgotPasswordForm from "./ForgotPasswordForm";
+import { authService } from "../services/auth";
 
 export default function LoginForm({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm();
 
-  const onSubmit = (data) => {
-    // Check credentials
-    if (data.email === "admin@mastery.com" && data.password === "admin1234") {
-      setLoginError("");
-      onLoginSuccess();
-    } else {
-      setLoginError("Invalid email or password");
+  const onSubmit = async (data) => {
+    setIsLoading(true);
+    setLoginError("");
+
+    try {
+      const result = await authService.login(data.email, data.password);
+
+      if (result.success) {
+        onLoginSuccess(result.data.user);
+      } else {
+        setLoginError(result.message || "Invalid email or password");
+      }
+    } catch (error) {
+      setLoginError("An error occurred during login. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -208,22 +219,25 @@ export default function LoginForm({ onLoginSuccess }) {
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full bg-white text-gray-900 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              disabled={isLoading}
+              className="w-full bg-white text-gray-900 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Login
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
-              </svg>
+              {isLoading ? "Logging in..." : "Login"}
+              {!isLoading && (
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
+                </svg>
+              )}
             </button>
           </form>
         </div>
