@@ -443,7 +443,7 @@ export default function Notifications() {
                   <table className="w-full">
                     <thead className="sticky top-0 bg-[#1E2532] z-10">
                       <tr className="border-b border-gray-700">
-                        <th className="text-left py-3 px-4 text-gray-300 font-medium">
+                        <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
                           <input
                             type="checkbox"
                             className="w-4 h-4 accent-blue-500"
@@ -461,7 +461,7 @@ export default function Notifications() {
                           />
                         </th>
                         <th
-                          className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                           onClick={() => handleSort('name')}
                         >
                           <div className="flex items-center gap-2">
@@ -470,7 +470,7 @@ export default function Notifications() {
                           </div>
                         </th>
                         <th
-                          className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                           onClick={() => handleSort('email')}
                         >
                           <div className="flex items-center gap-2">
@@ -479,7 +479,7 @@ export default function Notifications() {
                           </div>
                         </th>
                         <th
-                          className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                           onClick={() => handleSort('role')}
                         >
                           <div className="flex items-center gap-2">
@@ -488,7 +488,7 @@ export default function Notifications() {
                           </div>
                         </th>
                         <th
-                          className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                           onClick={() => handleSort('signupMethod')}
                         >
                           <div className="flex items-center gap-2">
@@ -497,7 +497,7 @@ export default function Notifications() {
                           </div>
                         </th>
                         <th
-                          className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                           onClick={() => handleSort('createdAt')}
                         >
                           <div className="flex items-center gap-2">
@@ -506,7 +506,7 @@ export default function Notifications() {
                           </div>
                         </th>
                         <th
-                          className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                           onClick={() => handleSort('status')}
                         >
                           <div className="flex items-center gap-2">
@@ -515,7 +515,7 @@ export default function Notifications() {
                           </div>
                         </th>
                         <th
-                          className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                           onClick={() => handleSort('plan')}
                         >
                           <div className="flex items-center gap-2">
@@ -546,13 +546,13 @@ export default function Notifications() {
                                 onChange={() => handleUserToggle(user)}
                               />
                             </td>
-                            <td className="py-4 px-4 text-gray-200">{user.name}</td>
-                            <td className="py-4 px-4 text-gray-200">{user.email}</td>
-                            <td className="py-4 px-4 text-gray-200">{user.role}</td>
-                            <td className="py-4 px-4 text-gray-200">
+                            <td className="py-4 px-4 text-gray-200 text-sm">{user.name}</td>
+                            <td className="py-4 px-4 text-gray-200 text-sm">{user.email}</td>
+                            <td className="py-4 px-4 text-gray-200 text-sm">{user.role}</td>
+                            <td className="py-4 px-4 text-gray-200 text-sm">
                               {user.signupMethod}
                             </td>
-                            <td className="py-4 px-4 text-gray-200">
+                            <td className="py-4 px-4 text-gray-200 text-sm">
                               {user.createdAt}
                             </td>
                             <td className="py-4 px-4">
@@ -564,7 +564,7 @@ export default function Notifications() {
                                 {user.status}
                               </span>
                             </td>
-                            <td className="py-4 px-4 text-gray-200">{user.plan}</td>
+                            <td className="py-4 px-4 text-gray-200 text-sm">{user.plan}</td>
                           </tr>
                         ))
                       )}
@@ -580,7 +580,7 @@ export default function Notifications() {
             <button
               onClick={handleSendNotification}
               disabled={!title || !message || isSending}
-              className={`bg-white text-gray-800 py-2 px-6 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`bg-white text-gray-800 py-2 px-6 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 isSending ? '' : 'hover:bg-gray-100'
               }`}
             >

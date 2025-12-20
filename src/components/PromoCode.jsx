@@ -316,7 +316,7 @@ export default function PromoCode() {
         <div className="flex gap-4 mb-6">
           <button
             onClick={() => setActiveTab('generate')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
+            className={`px-6 py-2 rounded-lg font-medium text-sm transition-colors cursor-pointer ${
               activeTab === 'generate'
                 ? 'bg-white text-gray-800'
                 : 'bg-[#1E2532] text-gray-400 hover:text-white'
@@ -326,7 +326,7 @@ export default function PromoCode() {
           </button>
           <button
             onClick={() => setActiveTab('assign')}
-            className={`px-6 py-2 rounded-lg font-medium transition-colors cursor-pointer ${
+            className={`px-6 py-2 rounded-lg font-medium text-sm transition-colors cursor-pointer ${
               activeTab === 'assign'
                 ? 'bg-white text-gray-800'
                 : 'bg-[#1E2532] text-gray-400 hover:text-white'
@@ -365,7 +365,7 @@ export default function PromoCode() {
             <button
               onClick={handleGeneratePromoCode}
               disabled={isGenerating}
-              className={`bg-white text-gray-800 py-2 px-6 rounded-lg font-medium transition-colors ${
+              className={`bg-white text-gray-800 py-2 px-6 rounded-lg font-medium text-sm transition-colors ${
                 isGenerating
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:bg-gray-100 cursor-pointer'
@@ -410,7 +410,7 @@ export default function PromoCode() {
               <thead className="sticky top-0 bg-[#1E2532] z-10">
                 <tr className="border-b border-gray-700">
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort('promoCode')}
                   >
                     <div className="flex items-center gap-2">
@@ -419,7 +419,7 @@ export default function PromoCode() {
                     </div>
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort('promoType')}
                   >
                     <div className="flex items-center gap-2">
@@ -428,7 +428,7 @@ export default function PromoCode() {
                     </div>
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort('creationDate')}
                   >
                     <div className="flex items-center gap-2">
@@ -437,7 +437,7 @@ export default function PromoCode() {
                     </div>
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort('isUsed')}
                   >
                     <div className="flex items-center gap-2">
@@ -466,13 +466,13 @@ export default function PromoCode() {
                       key={promo.id || `promo-${index}`}
                       className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
                     >
-                      <td className="py-4 px-4 text-gray-200">
+                      <td className="py-4 px-4 text-gray-200 text-sm">
                         {promo.promoCode}
                       </td>
-                      <td className="py-4 px-4 text-gray-200">
+                      <td className="py-4 px-4 text-gray-200 text-sm">
                         <span className="capitalize">{promo.promoType}</span>
                       </td>
-                      <td className="py-4 px-4 text-gray-200">
+                      <td className="py-4 px-4 text-gray-200 text-sm">
                         {formatDate(promo.creationDate)}
                       </td>
                       <td className="py-4 px-4">
@@ -529,7 +529,7 @@ export default function PromoCode() {
                 <thead className="sticky top-0 bg-[#1E2532] z-10">
                   <tr className="border-b border-gray-700">
                     <th
-                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                       onClick={() => handleSort('name')}
                     >
                       <div className="flex items-center gap-2">
@@ -538,7 +538,7 @@ export default function PromoCode() {
                       </div>
                     </th>
                     <th
-                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                       onClick={() => handleSort('email')}
                     >
                       <div className="flex items-center gap-2">
@@ -547,7 +547,7 @@ export default function PromoCode() {
                       </div>
                     </th>
                     <th
-                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                       onClick={() => handleSort('role')}
                     >
                       <div className="flex items-center gap-2">
@@ -556,7 +556,7 @@ export default function PromoCode() {
                       </div>
                     </th>
                     <th
-                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                       onClick={() => handleSort('status')}
                     >
                       <div className="flex items-center gap-2">
@@ -564,7 +564,7 @@ export default function PromoCode() {
                         <SortIcon columnKey="status" />
                       </div>
                     </th>
-                    <th className="text-left py-3 px-4 text-gray-300 font-medium">
+                    <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
                       Action
                     </th>
                   </tr>
@@ -588,9 +588,9 @@ export default function PromoCode() {
                         key={user.id || user.userId || `user-${index}`}
                         className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
                       >
-                        <td className="py-4 px-4 text-gray-200">{user.name}</td>
-                        <td className="py-4 px-4 text-gray-200">{user.email}</td>
-                        <td className="py-4 px-4 text-gray-200">{user.role}</td>
+                        <td className="py-4 px-4 text-gray-200 text-sm">{user.name}</td>
+                        <td className="py-4 px-4 text-gray-200 text-sm">{user.email}</td>
+                        <td className="py-4 px-4 text-gray-200 text-sm">{user.role}</td>
                         <td className="py-4 px-4">
                           <span
                             className={`${getUserStatusColor(

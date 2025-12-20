@@ -202,7 +202,7 @@ export default function Users() {
               <thead className="sticky top-0 bg-[#1E2532] z-10">
                 <tr className="border-b border-gray-700">
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort("name")}
                   >
                     <div className="flex items-center gap-2">
@@ -211,7 +211,7 @@ export default function Users() {
                     </div>
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort("email")}
                   >
                     <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function Users() {
                     </div>
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort("role")}
                   >
                     <div className="flex items-center gap-2">
@@ -229,7 +229,7 @@ export default function Users() {
                     </div>
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort("signupMethod")}
                   >
                     <div className="flex items-center gap-2">
@@ -238,7 +238,7 @@ export default function Users() {
                     </div>
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort("createdAt")}
                   >
                     <div className="flex items-center gap-2">
@@ -247,7 +247,7 @@ export default function Users() {
                     </div>
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort("status")}
                   >
                     <div className="flex items-center gap-2">
@@ -256,7 +256,7 @@ export default function Users() {
                     </div>
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort("plan")}
                   >
                     <div className="flex items-center gap-2">
@@ -264,7 +264,7 @@ export default function Users() {
                       <SortIcon columnKey="plan" />
                     </div>
                   </th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium"></th>
+                  <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap"></th>
                 </tr>
               </thead>
               <tbody>
@@ -286,13 +286,13 @@ export default function Users() {
                       key={user.userId || user.id}
                       className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
                     >
-                      <td className="py-4 px-4 text-gray-200">{user.name}</td>
-                      <td className="py-4 px-4 text-gray-200">{user.email}</td>
-                      <td className="py-4 px-4 text-gray-200">{user.role}</td>
-                      <td className="py-4 px-4 text-gray-200">
+                      <td className="py-4 px-4 text-gray-200 text-sm">{user.name}</td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">{user.email}</td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">{user.role}</td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">
                         {user.signupMethod}
                       </td>
-                      <td className="py-4 px-4 text-gray-200">
+                      <td className="py-4 px-4 text-gray-200 text-sm">
                         {user.createdAt}
                       </td>
                       <td className="py-4 px-4">
@@ -304,7 +304,7 @@ export default function Users() {
                           {user.status}
                         </span>
                       </td>
-                      <td className="py-4 px-4 text-gray-200">{user.plan}</td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">{user.plan}</td>
                       <td className="py-4 px-4">
                         <button
                           onClick={() => handleViewUser(user)}

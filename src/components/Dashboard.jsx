@@ -142,7 +142,7 @@ export default function Dashboard() {
             : statsCards.map((card, index) => (
                 <div key={index} className={`${card.bgColor} rounded-xl p-6`}>
                   <h3 className="text-gray-400 text-sm mb-2">{card.title}</h3>
-                  <p className="text-white text-3xl font-bold">{card.value}</p>
+                  <p className="text-white text-2xl font-bold">{card.value}</p>
                 </div>
               ))}
         </div>
@@ -282,7 +282,7 @@ export default function Dashboard() {
 
           {/* Subscriptions Overview */}
           <div className="bg-[#1E2532] rounded-xl p-6">
-            <h2 className="text-white text-xl font-semibold mb-6">
+            <h2 className="text-white text-2xl font-semibold mb-6">
               Subscriptions Overview
             </h2>
 
@@ -408,7 +408,7 @@ export default function Dashboard() {
               <thead className="sticky top-0 bg-[#1E2532] z-10">
                 <tr className="border-b border-gray-700">
                   <th
-                    className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
+                    className="text-left py-3 px-4 text-white text-sm font-medium cursor-pointer hover:text-gray-300 whitespace-nowrap"
                     onClick={() => handleSort("name")}
                   >
                     Name{" "}
@@ -416,7 +416,7 @@ export default function Dashboard() {
                       (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
+                    className="text-left py-3 px-4 text-white text-sm font-medium cursor-pointer hover:text-gray-300 whitespace-nowrap"
                     onClick={() => handleSort("email")}
                   >
                     Email{" "}
@@ -424,7 +424,7 @@ export default function Dashboard() {
                       (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
+                    className="text-left py-3 px-4 text-white text-sm font-medium cursor-pointer hover:text-gray-300 whitespace-nowrap"
                     onClick={() => handleSort("role")}
                   >
                     Role{" "}
@@ -432,7 +432,7 @@ export default function Dashboard() {
                       (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
+                    className="text-left py-3 px-4 text-white text-sm font-medium cursor-pointer hover:text-gray-300 whitespace-nowrap"
                     onClick={() => handleSort("signupMethod")}
                   >
                     Signup Method{" "}
@@ -440,7 +440,7 @@ export default function Dashboard() {
                       (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
+                    className="text-left py-3 px-4 text-white text-sm font-medium cursor-pointer hover:text-gray-300 whitespace-nowrap"
                     onClick={() => handleSort("createdAt")}
                   >
                     Created At{" "}
@@ -448,7 +448,7 @@ export default function Dashboard() {
                       (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
+                    className="text-left py-3 px-4 text-white text-sm font-medium cursor-pointer hover:text-gray-300 whitespace-nowrap"
                     onClick={() => handleSort("status")}
                   >
                     Status{" "}
@@ -456,7 +456,7 @@ export default function Dashboard() {
                       (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
-                    className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"
+                    className="text-left py-3 px-4 text-white text-sm font-medium cursor-pointer hover:text-gray-300 whitespace-nowrap"
                     onClick={() => handleSort("plan")}
                   >
                     Plan{" "}
@@ -484,13 +484,13 @@ export default function Dashboard() {
                       key={index}
                       className="border-b border-gray-700 hover:bg-[#2A3441]"
                     >
-                      <td className="py-3 px-4 text-white">{user.name}</td>
-                      <td className="py-3 px-4 text-gray-300">{user.email}</td>
-                      <td className="py-3 px-4 text-gray-300">{user.role}</td>
-                      <td className="py-3 px-4 text-gray-300">
+                      <td className="py-3 px-4 text-white text-sm">{user.name}</td>
+                      <td className="py-3 px-4 text-gray-300 text-sm">{user.email}</td>
+                      <td className="py-3 px-4 text-gray-300 text-sm">{user.role}</td>
+                      <td className="py-3 px-4 text-gray-300 text-sm">
                         {user.signupMethod}
                       </td>
-                      <td className="py-3 px-4 text-gray-300">
+                      <td className="py-3 px-4 text-gray-300 text-sm">
                         {user.createdAt}
                       </td>
                       <td className="py-3 px-4">
@@ -506,7 +506,7 @@ export default function Dashboard() {
                           {user.status}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-gray-300">{user.plan}</td>
+                      <td className="py-3 px-4 text-gray-300 text-sm">{user.plan}</td>
                     </tr>
                   ))
                 )}

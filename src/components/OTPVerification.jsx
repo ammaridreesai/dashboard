@@ -107,7 +107,7 @@ export default function OTPVerification({ email, onGoBack, onVerifySuccess }) {
           {/* Go Back Button */}
           <button
             onClick={onGoBack}
-            className="mb-6 flex items-center gap-2 text-white bg-[#2A3441] px-4 py-2 rounded-lg hover:bg-[#354051] transition-colors cursor-pointer"
+            className="mb-6 flex items-center gap-2 text-white bg-[#2A3441] px-4 py-2 rounded-lg text-sm hover:bg-[#354051] transition-colors cursor-pointer"
           >
             <svg
               className="w-5 h-5"
@@ -183,7 +183,7 @@ export default function OTPVerification({ email, onGoBack, onVerifySuccess }) {
             {/* Verify Button */}
             <button
               onClick={handleVerify}
-              className="w-full bg-white text-gray-900 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full bg-white text-gray-900 py-3 rounded-lg font-semibold text-sm hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               Verify Code
               <svg

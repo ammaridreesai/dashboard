@@ -8,7 +8,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
         <img
           src="/assets/mastery-logo.svg"
           alt="Mastery Logo"
-          className="h-10 w-auto"
+          className="h-14 w-auto"
         />
       </div>
 
@@ -18,7 +18,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
           <li>
             <button
               onClick={() => setActiveView('dashboard')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer text-sm ${
                 activeView === 'dashboard'
                   ? 'text-white bg-[#2A3441]'
                   : 'text-gray-400 hover:bg-[#2A3441] hover:text-white'
@@ -33,7 +33,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
           <li>
             <button
               onClick={() => setActiveView('users')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer text-sm ${
                 activeView === 'users'
                   ? 'text-white bg-[#2A3441]'
                   : 'text-gray-400 hover:bg-[#2A3441] hover:text-white'
@@ -48,7 +48,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
           <li>
             <button
               onClick={() => setActiveView('subscriptions')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer text-sm ${
                 activeView === 'subscriptions'
                   ? 'text-white bg-[#2A3441]'
                   : 'text-gray-400 hover:bg-[#2A3441] hover:text-white'
@@ -63,7 +63,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
           <li>
             <button
               onClick={() => setActiveView('notifications')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer text-sm ${
                 activeView === 'notifications'
                   ? 'text-white bg-[#2A3441]'
                   : 'text-gray-400 hover:bg-[#2A3441] hover:text-white'
@@ -78,7 +78,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
           <li>
             <button
               onClick={() => setActiveView('promocode')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer text-sm ${
                 activeView === 'promocode'
                   ? 'text-white bg-[#2A3441]'
                   : 'text-gray-400 hover:bg-[#2A3441] hover:text-white'
@@ -97,7 +97,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
       <div className="p-4">
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 text-red-400 rounded-lg hover:bg-[#2A3441] transition-colors cursor-pointer"
+          className="w-full flex items-center gap-3 px-4 py-3 text-red-400 rounded-lg hover:bg-[#2A3441] transition-colors cursor-pointer text-sm"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

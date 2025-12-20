@@ -90,7 +90,7 @@ export default function SubscriptionDetailModal({ open, onClose, subscription })
             {/* Section Header */}
             <button
               onClick={toggleSection}
-              className="w-full flex items-center justify-between px-4 py-3 text-white hover:bg-[#2A3441] transition-colors cursor-pointer"
+              className="w-full flex items-center justify-between px-4 py-3 text-white text-sm hover:bg-[#2A3441] transition-colors cursor-pointer"
             >
               <span className="font-medium">{subscription.subscriptionType} Subscription</span>
               <svg

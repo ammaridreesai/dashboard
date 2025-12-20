@@ -234,7 +234,7 @@ export default function Subscriptions() {
                 <thead className="sticky top-0 bg-[#1E2532] z-10">
                   <tr className="border-b border-gray-700">
                     <th
-                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                       onClick={() => handleSort("name")}
                     >
                       <div className="flex items-center gap-2">
@@ -243,7 +243,7 @@ export default function Subscriptions() {
                       </div>
                     </th>
                     <th
-                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                       onClick={() => handleSort("email")}
                     >
                       <div className="flex items-center gap-2">
@@ -252,7 +252,7 @@ export default function Subscriptions() {
                       </div>
                     </th>
                     <th
-                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                       onClick={() => handleSort("subscriptionType")}
                     >
                       <div className="flex items-center gap-2">
@@ -261,7 +261,7 @@ export default function Subscriptions() {
                       </div>
                     </th>
                     <th
-                      className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                       onClick={() => handleSort("status")}
                     >
                       <div className="flex items-center gap-2">
@@ -269,7 +269,7 @@ export default function Subscriptions() {
                         <SortIcon columnKey="status" />
                       </div>
                     </th>
-                    <th className="text-left py-3 px-4 text-gray-300 font-medium"></th>
+                    <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -279,9 +279,9 @@ export default function Subscriptions() {
                         key={subscription.id}
                         className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
                       >
-                        <td className="py-4 px-4 text-gray-200">{subscription.name}</td>
-                        <td className="py-4 px-4 text-gray-200">{subscription.email}</td>
-                        <td className="py-4 px-4 text-gray-200">
+                        <td className="py-4 px-4 text-gray-200 text-sm">{subscription.name}</td>
+                        <td className="py-4 px-4 text-gray-200 text-sm">{subscription.email}</td>
+                        <td className="py-4 px-4 text-gray-200 text-sm">
                           {subscription.subscriptionType}
                         </td>
                         <td className="py-4 px-4">
