@@ -2,7 +2,7 @@
 
 export default function Sidebar({ onLogout, activeView, setActiveView }) {
   return (
-    <div className="w-64 h-screen bg-[#1A2332] flex flex-col fixed left-0 top-0">
+    <div className="w-48 h-screen bg-[#1A2332] flex flex-col fixed left-0 top-0">
       {/* Logo */}
       <div className="p-6 flex items-center justify-center">
         <img

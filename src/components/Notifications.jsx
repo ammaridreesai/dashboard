@@ -152,13 +152,24 @@ export default function Notifications() {
         return;
       }
 
-      const payload = {
-        userIds: userIds,
-        title: title,
-        body: message,
-      };
+      let response;
 
-      const response = await apiClient.post('/notifications/send-bulk', payload);
+      // Use single send API if only one user, bulk send API for multiple users
+      if (userIds.length === 1) {
+        const payload = {
+          Id: userIds[0],
+          title: title,
+          body: message,
+        };
+        response = await apiClient.post('/notifications/send-notification', payload);
+      } else {
+        const payload = {
+          userIds: userIds,
+          title: title,
+          body: message,
+        };
+        response = await apiClient.post('/notifications/send-bulk', payload);
+      }
 
       if (response.data.isRequestSuccessful) {
         setToastType('success');
@@ -252,7 +263,7 @@ export default function Notifications() {
   };
 
   return (
-    <div className="flex-1 ml-64 bg-[#2C3947] min-h-screen">
+    <div className="flex-1 ml-48 bg-[#2C3947] min-h-screen">
       {/* Header */}
       <Header />
 
@@ -423,14 +434,14 @@ export default function Notifications() {
               </div>
 
               {/* Users Table */}
-              <div className="overflow-x-auto mb-6">
+              <div className="h-96 overflow-auto mb-6">
                 {isLoadingUsers ? (
                   <div className="flex justify-center items-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
                   </div>
                 ) : (
                   <table className="w-full">
-                    <thead>
+                    <thead className="sticky top-0 bg-[#1E2532] z-10">
                       <tr className="border-b border-gray-700">
                         <th className="text-left py-3 px-4 text-gray-300 font-medium">
                           <input

@@ -117,7 +117,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="ml-64 min-h-screen bg-[#2C3947]">
+    <div className="ml-48 min-h-screen bg-[#2C3947]">
       <Header />
 
       {/* Main Content */}
@@ -288,11 +288,8 @@ export default function Dashboard() {
 
             {isLoadingSubscriptions ? (
               <div className="flex items-center justify-between animate-pulse">
-                {/* Skeleton for Donut Chart */}
-                <div className="w-48 h-48 rounded-full bg-gray-700"></div>
-
                 {/* Skeleton for Legend */}
-                <div className="space-y-4 flex-1 ml-8">
+                <div className="space-y-4 flex-1 mr-8">
                   {Array(4)
                     .fill(0)
                     .map((_, index) => (
@@ -302,9 +299,26 @@ export default function Dashboard() {
                       </div>
                     ))}
                 </div>
+
+                {/* Skeleton for Donut Chart */}
+                <div className="w-48 h-48 rounded-full bg-gray-700"></div>
               </div>
             ) : (
               <div className="flex items-center justify-between">
+                {/* Legend */}
+                <div className="space-y-4">
+                  {subscriptionData.map((item, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <div
+                        className={`w-3 h-3 rounded-full ${item.color}`}
+                      ></div>
+                      <span className="text-gray-300 text-sm">
+                        {item.label} ({item.percentage}%)
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
                 {/* Donut Chart */}
                 <div className="relative w-48 h-48">
                   <svg
@@ -357,20 +371,6 @@ export default function Dashboard() {
                     })()}
                   </svg>
                 </div>
-
-                {/* Legend */}
-                <div className="space-y-4">
-                  {subscriptionData.map((item, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div
-                        className={`w-3 h-3 rounded-full ${item.color}`}
-                      ></div>
-                      <span className="text-gray-300 text-sm">
-                        {item.label} ({item.percentage}%)
-                      </span>
-                    </div>
-                  ))}
-                </div>
               </div>
             )}
           </div>
@@ -403,9 +403,9 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="h-96 overflow-auto">
             <table className="w-full">
-              <thead>
+              <thead className="sticky top-0 bg-[#1E2532] z-10">
                 <tr className="border-b border-gray-700">
                   <th
                     className="text-left py-3 px-4 text-white font-medium cursor-pointer hover:text-gray-300"

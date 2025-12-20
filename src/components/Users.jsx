@@ -140,7 +140,7 @@ export default function Users() {
   };
 
   return (
-    <div className="flex-1 ml-64 bg-[#2C3947] min-h-screen">
+    <div className="flex-1 ml-48 bg-[#2C3947] min-h-screen">
       {/* Header */}
       <Header />
 
@@ -197,9 +197,9 @@ export default function Users() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="h-96 overflow-auto">
             <table className="w-full">
-              <thead>
+              <thead className="sticky top-0 bg-[#1E2532] z-10">
                 <tr className="border-b border-gray-700">
                   <th
                     className="text-left py-3 px-4 text-gray-300 font-medium cursor-pointer hover:text-white"
