@@ -7,6 +7,7 @@ import Users from "@/components/Users";
 import Subscriptions from "@/components/Subscriptions";
 import Notifications from "@/components/Notifications";
 import PromoCode from "@/components/PromoCode";
+import Tickets from "@/components/Tickets";
 import LoginForm from "@/components/LoginForm";
 import { authService } from "@/services/auth";
 
@@ -74,6 +75,8 @@ export default function Home() {
         return <Notifications />;
       case 'promocode':
         return <PromoCode />;
+      case 'tickets':
+        return <Tickets />;
       default:
         return <Dashboard />;
     }

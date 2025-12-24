@@ -1,61 +1,99 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import UserDetailModal from "./UserDetailModal";
+import ScreenshotModal from "./ScreenshotModal";
+import UpdateStatusModal from "./UpdateStatusModal";
 import Header from "./Header";
 import apiClient from "../services/api";
 import * as XLSX from "xlsx";
 
-export default function Users() {
+export default function Tickets() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedScreenshot, setSelectedScreenshot] = useState(null);
   const [showModal, setShowModal] = useState(false);
-  const [users, setUsers] = useState([]);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchTickets = async () => {
       try {
-        const response = await apiClient.get("/users/dashboard/all-users");
+        const response = await apiClient.get("/report-tickets");
         if (response.data.isRequestSuccessful) {
-          setUsers(response.data.successResponse);
+          setTickets(response.data.successResponse);
         }
       } catch (error) {
-        console.error("Error fetching users:", error);
+        console.error("Error fetching tickets:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUsers();
+    fetchTickets();
   }, []);
 
-  const handleViewUser = (user) => {
-    setSelectedUser(user);
+  const handleViewScreenshot = (ticket) => {
+    setSelectedScreenshot({
+      screenshot: ticket.screenshotUrl,
+      title: ticket.title,
+    });
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setSelectedUser(null);
+    setSelectedScreenshot(null);
   };
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleUpdateStatus = (ticket) => {
+    setSelectedTicket(ticket);
+    setShowStatusModal(true);
+  };
+
+  const handleCloseStatusModal = () => {
+    setShowStatusModal(false);
+    setSelectedTicket(null);
+  };
+
+  const handleStatusUpdated = (ticketId, newStatus) => {
+    setTickets((prevTickets) =>
+      prevTickets.map((ticket) =>
+        ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
+      )
+    );
+  };
+
+  // Filter tickets based on search term
+  const filteredTickets = tickets.filter(
+    (ticket) =>
+      ticket.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ticket.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (ticket.user?.FullName && ticket.user.FullName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (ticket.user?.Email && ticket.user.Email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Sort users
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
+  // Sort tickets
+  const sortedTickets = [...filteredTickets].sort((a, b) => {
     if (!sortConfig.key) return 0;
 
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+    let aValue, bValue;
+
+    // Handle nested user object for name and email
+    if (sortConfig.key === "userName") {
+      aValue = a.user?.FullName || "";
+      bValue = b.user?.FullName || "";
+    } else if (sortConfig.key === "userEmail") {
+      aValue = a.user?.Email || "";
+      bValue = b.user?.Email || "";
+    } else {
+      aValue = a[sortConfig.key];
+      bValue = b[sortConfig.key];
+    }
 
     if (aValue < bValue) {
       return sortConfig.direction === "asc" ? -1 : 1;
@@ -77,18 +115,16 @@ export default function Users() {
     });
   };
 
-  // Get status badge color
-  const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return "bg-green-500";
-      case "banned":
-        return "bg-red-500";
-      case "pending":
-        return "bg-orange-500";
-      default:
-        return "bg-gray-500";
-    }
+  // Format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   // Export to Excel function
@@ -96,29 +132,58 @@ export default function Users() {
     setIsExporting(true);
 
     try {
-      const dataToExport = sortedUsers.map((user) => ({
-        Name: user.name,
-        Email: user.email,
-        Role: user.role,
-        Gender: user.gender || "Not provided",
-        Location: user.country || user.location || "Not provided",
-        "Signup Method": user.signupMethod,
-        "Created At": user.createdAt,
-        Status: user.status,
-        Plan: user.plan,
-        Snapchat: user.snapchat || "Not provided",
-        TikTok: user.tiktok || "Not provided",
-        Instagram: user.instagram || "Not provided",
+      const dataToExport = sortedTickets.map((ticket) => ({
+        "User Name": ticket.user?.FullName || "N/A",
+        "User Email": ticket.user?.Email || "N/A",
+        Type: ticket.type,
+        Status: ticket.status,
+        Title: ticket.title,
+        Description: ticket.description,
+        "Created At": formatDate(ticket.createdAt),
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(dataToExport);
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Tickets");
 
-      const fileName = `users_export_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const fileName = `tickets_export_${new Date().toISOString().split("T")[0]}.xlsx`;
       XLSX.writeFile(workbook, fileName);
     } finally {
       setIsExporting(false);
+    }
+  };
+
+  // Get type badge color
+  const getTypeColor = (type) => {
+    switch (type.toLowerCase()) {
+      case "bug report":
+      case "bug":
+        return "bg-red-500";
+      case "feature request":
+        return "bg-blue-500";
+      case "feedback":
+        return "bg-green-500";
+      case "issue":
+        return "bg-orange-500";
+      default:
+        return "bg-gray-500";
+    }
+  };
+
+  // Get status badge color
+  const getStatusColor = (status) => {
+    switch (status.toLowerCase()) {
+      case "pending":
+        return "bg-yellow-500";
+      case "resolved":
+      case "completed":
+        return "bg-green-500";
+      case "in progress":
+        return "bg-blue-500";
+      case "rejected":
+        return "bg-red-500";
+      default:
+        return "bg-gray-500";
     }
   };
 
@@ -195,13 +260,13 @@ export default function Users() {
             />
           </svg>
           <span>&gt;</span>
-          <span>Users</span>
+          <span>Tickets</span>
         </div>
 
         {/* Page Title */}
-        <h1 className="text-3xl font-semibold text-white mb-8">Users</h1>
+        <h1 className="text-3xl font-semibold text-white mb-8">Tickets</h1>
 
-        {/* Users Table Container */}
+        {/* Tickets Table Container */}
         <div className="bg-[#1E2532] rounded-lg p-6">
           {/* Search Bar and Export Button */}
           <div className="mb-6 flex items-center justify-between">
@@ -230,7 +295,7 @@ export default function Users() {
 
             <button
               onClick={handleExportToExcel}
-              disabled={sortedUsers.length === 0 || isExporting}
+              disabled={sortedTickets.length === 0 || isExporting}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors font-medium cursor-pointer"
             >
               {isExporting ? (
@@ -284,47 +349,29 @@ export default function Users() {
                 <tr className="border-b border-gray-700">
                   <th
                     className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                    onClick={() => handleSort("name")}
+                    onClick={() => handleSort("userName")}
                   >
                     <div className="flex items-center gap-2">
-                      Name
-                      <SortIcon columnKey="name" />
+                      User Name
+                      <SortIcon columnKey="userName" />
                     </div>
                   </th>
                   <th
                     className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                    onClick={() => handleSort("email")}
+                    onClick={() => handleSort("userEmail")}
                   >
                     <div className="flex items-center gap-2">
-                      Email
-                      <SortIcon columnKey="email" />
+                      User Email
+                      <SortIcon columnKey="userEmail" />
                     </div>
                   </th>
                   <th
                     className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                    onClick={() => handleSort("role")}
+                    onClick={() => handleSort("type")}
                   >
                     <div className="flex items-center gap-2">
-                      Role
-                      <SortIcon columnKey="role" />
-                    </div>
-                  </th>
-                  <th
-                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                    onClick={() => handleSort("signupMethod")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Signup Method
-                      <SortIcon columnKey="signupMethod" />
-                    </div>
-                  </th>
-                  <th
-                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                    onClick={() => handleSort("createdAt")}
-                  >
-                    <div className="flex items-center gap-2">
-                      Created At
-                      <SortIcon columnKey="createdAt" />
+                      Type
+                      <SortIcon columnKey="type" />
                     </div>
                   </th>
                   <th
@@ -338,57 +385,88 @@ export default function Users() {
                   </th>
                   <th
                     className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                    onClick={() => handleSort("plan")}
+                    onClick={() => handleSort("title")}
                   >
                     <div className="flex items-center gap-2">
-                      Plan
-                      <SortIcon columnKey="plan" />
+                      Title
+                      <SortIcon columnKey="title" />
                     </div>
                   </th>
-                  <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap"></th>
+                  <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
+                    Description
+                  </th>
+                  <th
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
+                    onClick={() => handleSort("createdAt")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Created At
+                      <SortIcon columnKey="createdAt" />
+                    </div>
+                  </th>
+                  <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
+                    Screenshot
+                  </th>
+                  <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan="8" className="py-8 text-center">
-                      <div className="text-gray-400">Loading users...</div>
+                    <td colSpan="9" className="py-8 text-center">
+                      <div className="text-gray-400">Loading tickets...</div>
                     </td>
                   </tr>
-                ) : sortedUsers.length === 0 ? (
+                ) : sortedTickets.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="py-8 text-center">
-                      <div className="text-gray-400">No users found</div>
+                    <td colSpan="9" className="py-8 text-center">
+                      <div className="text-gray-400">No tickets found</div>
                     </td>
                   </tr>
                 ) : (
-                  sortedUsers.map((user) => (
+                  sortedTickets.map((ticket) => (
                     <tr
-                      key={user.userId || user.id}
+                      key={ticket.id}
                       className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
                     >
-                      <td className="py-4 px-4 text-gray-200 text-sm">{user.name}</td>
-                      <td className="py-4 px-4 text-gray-200 text-sm">{user.email}</td>
-                      <td className="py-4 px-4 text-gray-200 text-sm">{user.role}</td>
                       <td className="py-4 px-4 text-gray-200 text-sm">
-                        {user.signupMethod}
+                        {ticket.user?.FullName || "N/A"}
                       </td>
                       <td className="py-4 px-4 text-gray-200 text-sm">
-                        {user.createdAt}
+                        {ticket.user?.Email || "N/A"}
+                      </td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`${getTypeColor(
+                            ticket.type
+                          )} text-white px-3 py-1 rounded-full text-sm font-medium`}
+                        >
+                          {ticket.type}
+                        </span>
                       </td>
                       <td className="py-4 px-4">
                         <span
                           className={`${getStatusColor(
-                            user.status
+                            ticket.status
                           )} text-white px-3 py-1 rounded-full text-sm font-medium`}
                         >
-                          {user.status}
+                          {ticket.status}
                         </span>
                       </td>
-                      <td className="py-4 px-4 text-gray-200 text-sm">{user.plan}</td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">
+                        {ticket.title}
+                      </td>
+                      <td className="py-4 px-4 text-gray-200 text-sm max-w-xs truncate">
+                        {ticket.description}
+                      </td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">
+                        {formatDate(ticket.createdAt)}
+                      </td>
                       <td className="py-4 px-4">
                         <button
-                          onClick={() => handleViewUser(user)}
+                          onClick={() => handleViewScreenshot(ticket)}
                           className="text-gray-400 hover:text-white transition-colors cursor-pointer"
                         >
                           <svg
@@ -412,6 +490,14 @@ export default function Users() {
                           </svg>
                         </button>
                       </td>
+                      <td className="py-4 px-4">
+                        <button
+                          onClick={() => handleUpdateStatus(ticket)}
+                          className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors cursor-pointer"
+                        >
+                          Update Status
+                        </button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -421,11 +507,20 @@ export default function Users() {
         </div>
       </div>
 
-      {/* User Detail Modal */}
-      <UserDetailModal
+      {/* Screenshot Modal */}
+      <ScreenshotModal
         open={showModal}
         onClose={handleCloseModal}
-        user={selectedUser}
+        screenshot={selectedScreenshot?.screenshot}
+        title={selectedScreenshot?.title}
+      />
+
+      {/* Update Status Modal */}
+      <UpdateStatusModal
+        open={showStatusModal}
+        onClose={handleCloseStatusModal}
+        ticket={selectedTicket}
+        onStatusUpdated={handleStatusUpdated}
       />
     </div>
   );

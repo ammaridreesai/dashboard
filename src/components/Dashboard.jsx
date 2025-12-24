@@ -19,6 +19,8 @@ export default function Dashboard() {
   const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(true);
   const [usersData, setUsersData] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(true);
+  const [ticketAnalytics, setTicketAnalytics] = useState(null);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
 
   const getColorByLabel = (label) => {
     const colorMap = {
@@ -70,11 +72,21 @@ export default function Dashboard() {
           setUsersData(allUsersResponse.data.successResponse);
         }
         setIsLoadingUsers(false);
+
+        // Fetch ticket analytics
+        const ticketAnalyticsResponse = await apiClient.get(
+          "/report-tickets/analytics/status"
+        );
+        if (ticketAnalyticsResponse.data.isRequestSuccessful) {
+          setTicketAnalytics(ticketAnalyticsResponse.data.successResponse);
+        }
+        setIsLoadingAnalytics(false);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         setIsLoadingStats(false);
         setIsLoadingSubscriptions(false);
         setIsLoadingUsers(false);
+        setIsLoadingAnalytics(false);
       }
     };
 
@@ -149,147 +161,149 @@ export default function Dashboard() {
 
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* App Downloads Overview */}
-          <div className="bg-[#1E2532] rounded-xl p-6 relative">
-            <div className="blur-sm pointer-events-none">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-white text-xl font-semibold">
-                  App Downloads Overview
-                </h2>
-                <select
-                  className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option>Nov-2026</option>
-                  <option>Oct-2026</option>
-                  <option>Sep-2026</option>
-                </select>
-              </div>
-
-              <div className="relative">
-                <div className="absolute left-0 top-0 flex flex-col justify-between h-48 text-gray-400 text-xs pr-2">
-                  <span>100</span>
-                  <span>75</span>
-                  <span>50</span>
-                  <span>25</span>
-                  <span>0</span>
-                </div>
-
-                <div className="ml-8 relative h-48">
-                  <svg
-                    className="w-full h-full"
-                    viewBox="0 0 600 200"
-                    preserveAspectRatio="none"
-                  >
-                    <line
-                      x1="0"
-                      y1="0"
-                      x2="600"
-                      y2="0"
-                      stroke="#374151"
-                      strokeWidth="1"
-                    />
-                    <line
-                      x1="0"
-                      y1="50"
-                      x2="600"
-                      y2="50"
-                      stroke="#374151"
-                      strokeWidth="1"
-                    />
-                    <line
-                      x1="0"
-                      y1="100"
-                      x2="600"
-                      y2="100"
-                      stroke="#374151"
-                      strokeWidth="1"
-                    />
-                    <line
-                      x1="0"
-                      y1="150"
-                      x2="600"
-                      y2="150"
-                      stroke="#374151"
-                      strokeWidth="1"
-                    />
-                    <line
-                      x1="0"
-                      y1="200"
-                      x2="600"
-                      y2="200"
-                      stroke="#374151"
-                      strokeWidth="1"
-                    />
-
-                    <defs>
-                      <linearGradient
-                        id="lineGradient"
-                        x1="0%"
-                        y1="0%"
-                        x2="0%"
-                        y2="100%"
-                      >
-                        <stop offset="0%" stopColor="#22c55e" stopOpacity="0.3" />
-                        <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-
-                    <polygon
-                      fill="url(#lineGradient)"
-                      points="0,150 100,120 200,130 300,110 400,80 500,60 600,70 600,200 0,200"
-                    />
-
-                    <polyline
-                      fill="none"
-                      stroke="#22c55e"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      points="0,150 100,120 200,130 300,110 400,80 500,60 600,70"
-                    />
-
-                    <circle cx="0" cy="150" r="4" fill="#22c55e" />
-                    <circle cx="100" cy="120" r="4" fill="#22c55e" />
-                    <circle cx="200" cy="130" r="4" fill="#22c55e" />
-                    <circle cx="300" cy="110" r="4" fill="#22c55e" />
-                    <circle cx="400" cy="80" r="4" fill="#22c55e" />
-                    <circle cx="500" cy="60" r="4" fill="#22c55e" />
-                    <circle cx="600" cy="70" r="4" fill="#22c55e" />
-                  </svg>
-                </div>
-
-                <div className="ml-8 flex justify-between text-gray-400 text-xs mt-2">
-                  <span>1st week</span>
-                  <span>2nd week</span>
-                  <span>3rd week</span>
-                  <span>4th week</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Under Development Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center bg-[#1E2532]/50 rounded-xl">
-              <div className="text-center">
-                <div className="text-yellow-500 text-lg font-semibold mb-2">
-                  Under Development
-                </div>
+          {/* Ticket Analytics Overview */}
+          <div className="bg-[#1E2532] rounded-xl p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-white text-xl font-semibold">
+                Ticket Status Analytics
+              </h2>
+              {ticketAnalytics && (
                 <div className="text-gray-400 text-sm">
-                  This feature is coming soon
+                  Total: {ticketAnalytics.summary.total}
+                </div>
+              )}
+            </div>
+
+            {isLoadingAnalytics ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-gray-400">Loading analytics...</div>
+              </div>
+            ) : ticketAnalytics ? (
+              <div>
+                {/* Summary Stats */}
+                <div className="flex gap-4 mb-6">
+                  <div className="bg-[#2C3947] rounded-lg px-4 py-2 flex items-center gap-2">
+                    <div className="text-yellow-500 text-xs">Pending:</div>
+                    <div className="text-white text-sm font-semibold">
+                      {ticketAnalytics.summary.pending}
+                    </div>
+                  </div>
+                  <div className="bg-[#2C3947] rounded-lg px-4 py-2 flex items-center gap-2">
+                    <div className="text-blue-500 text-xs">In Progress:</div>
+                    <div className="text-white text-sm font-semibold">
+                      {ticketAnalytics.summary.in_progress}
+                    </div>
+                  </div>
+                  <div className="bg-[#2C3947] rounded-lg px-4 py-2 flex items-center gap-2">
+                    <div className="text-emerald-500 text-xs">Resolved:</div>
+                    <div className="text-white text-sm font-semibold">
+                      {ticketAnalytics.summary.resolved}
+                    </div>
+                  </div>
+                  <div className="bg-[#2C3947] rounded-lg px-4 py-2 flex items-center gap-2">
+                    <div className="text-gray-400 text-xs">Closed:</div>
+                    <div className="text-white text-sm font-semibold">
+                      {ticketAnalytics.summary.closed}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bar Chart */}
+                <div className="relative">
+                  {(() => {
+                    const maxValue = Math.max(
+                      ...ticketAnalytics.datasets.flatMap((dataset) => dataset.data)
+                    );
+                    const yAxisMax = Math.ceil(maxValue / 5) * 5 || 5;
+                    const chartHeight = 240;
+                    const colors = {
+                      pending: "#eab308",
+                      in_progress: "#3b82f6",
+                      resolved: "#22c55e",
+                      closed: "#9ca3af",
+                    };
+
+                    return (
+                      <div className="flex gap-8">
+                        {/* Y-axis labels */}
+                        <div className="flex flex-col justify-between text-gray-400 text-xs pr-2" style={{ height: `${chartHeight}px` }}>
+                          {Array.from({ length: 6 }, (_, i) => (
+                            <span key={i}>{yAxisMax - i * (yAxisMax / 5)}</span>
+                          ))}
+                        </div>
+
+                        {/* Chart area */}
+                        <div className="flex-1">
+                          <div className="flex items-end justify-around gap-4" style={{ height: `${chartHeight}px` }}>
+                            {ticketAnalytics.datasets.map((dataset, index) => {
+                              const value = dataset.data[0] || 0;
+                              const barHeight = (value / yAxisMax) * chartHeight;
+                              const color = colors[dataset.status] || "#9ca3af";
+
+                              return (
+                                <div key={index} className="flex flex-col items-center flex-1 max-w-[100px]">
+                                  {/* Bar */}
+                                  <div className="relative w-full flex flex-col items-center">
+                                    <div
+                                      className="w-full rounded-t-lg relative transition-all duration-500 hover:opacity-80"
+                                      style={{
+                                        height: `${barHeight}px`,
+                                        backgroundColor: color,
+                                        boxShadow: `0 4px 12px ${color}40`,
+                                      }}
+                                    >
+                                      {/* Value label on top of bar */}
+                                      <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-white text-sm font-semibold">
+                                        {value}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          {/* X-axis labels */}
+                          <div className="flex items-start justify-around gap-4 mt-4">
+                            {ticketAnalytics.datasets.map((dataset, index) => (
+                              <div key={index} className="flex-1 max-w-[100px] text-center">
+                                <div className="text-gray-300 text-xs font-medium">
+                                  {dataset.label}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Date label */}
+                          <div className="text-center mt-4 text-gray-400 text-xs">
+                            {ticketAnalytics.labels[0]}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center justify-center h-64">
+                <div className="text-gray-400">No analytics data available</div>
+              </div>
+            )}
           </div>
 
           {/* Subscriptions Overview */}
           <div className="bg-[#1E2532] rounded-xl p-6">
-            <h2 className="text-white text-2xl font-semibold mb-6">
+            <h2 className="text-white text-xl font-semibold mb-6">
               Subscriptions Overview
             </h2>
 
             {isLoadingSubscriptions ? (
-              <div className="flex items-center justify-between animate-pulse">
+              <div className="flex items-center justify-center h-64 animate-pulse">
+                {/* Skeleton for Donut Chart */}
+                <div className="w-48 h-48 rounded-full bg-gray-700"></div>
+
                 {/* Skeleton for Legend */}
-                <div className="space-y-4 flex-1 mr-8">
+                <div className="space-y-4 ml-8">
                   {Array(4)
                     .fill(0)
                     .map((_, index) => (
@@ -299,26 +313,9 @@ export default function Dashboard() {
                       </div>
                     ))}
                 </div>
-
-                {/* Skeleton for Donut Chart */}
-                <div className="w-48 h-48 rounded-full bg-gray-700"></div>
               </div>
             ) : (
-              <div className="flex items-center justify-between">
-                {/* Legend */}
-                <div className="space-y-4">
-                  {subscriptionData.map((item, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <div
-                        className={`w-3 h-3 rounded-full ${item.color}`}
-                      ></div>
-                      <span className="text-gray-300 text-sm">
-                        {item.label} ({item.percentage}%)
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
+              <div className="flex items-center justify-center h-64">
                 {/* Donut Chart */}
                 <div className="relative w-48 h-48">
                   <svg
@@ -370,6 +367,20 @@ export default function Dashboard() {
                       });
                     })()}
                   </svg>
+                </div>
+
+                {/* Legend */}
+                <div className="space-y-4 ml-8">
+                  {subscriptionData.map((item, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      <div
+                        className={`w-3 h-3 rounded-full ${item.color}`}
+                      ></div>
+                      <span className="text-gray-300 text-sm">
+                        {item.label} ({item.percentage}%)
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
