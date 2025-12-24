@@ -1,13 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal } from 'react-responsive-modal';
 import 'react-responsive-modal/styles.css';
 import apiClient from '../services/api';
 
 export default function UpdateStatusModal({ open, onClose, ticket, onStatusUpdated }) {
-  const [selectedStatus, setSelectedStatus] = useState(ticket?.status || 'pending');
+  const [selectedStatus, setSelectedStatus] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Update selected status when ticket changes
+  useEffect(() => {
+    if (ticket) {
+      setSelectedStatus(ticket.status === 'pending' ? '' : ticket.status);
+    }
+  }, [ticket]);
 
   const statusOptions = [
     { value: 'in_progress', label: 'In Progress' },
@@ -102,6 +109,11 @@ export default function UpdateStatusModal({ open, onClose, ticket, onStatusUpdat
             onChange={(e) => setSelectedStatus(e.target.value)}
             className="w-full px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
+            {ticket?.status === 'pending' && (
+              <option value="" disabled>
+                Select Status
+              </option>
+            )}
             {statusOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -121,7 +133,7 @@ export default function UpdateStatusModal({ open, onClose, ticket, onStatusUpdat
           </button>
           <button
             onClick={handleUpdateStatus}
-            disabled={isUpdating}
+            disabled={isUpdating || !selectedStatus}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             {isUpdating ? 'Updating...' : 'Update Status'}
