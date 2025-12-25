@@ -441,7 +441,7 @@ export default function Tickets() {
                         <span
                           className={`${getTypeColor(
                             ticket.type
-                          )} text-white px-3 py-1 rounded-full text-sm font-medium`}
+                          )} text-white px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap`}
                         >
                           {ticket.type}
                         </span>
