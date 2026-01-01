@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import ScreenshotModal from "./ScreenshotModal";
 import UpdateStatusModal from "./UpdateStatusModal";
+import TicketDescriptionModal from "./TicketDescriptionModal";
 import Header from "./Header";
 import apiClient from "../services/api";
 import * as XLSX from "xlsx";
@@ -14,6 +15,8 @@ export default function Tickets() {
   const [showModal, setShowModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
+  const [selectedTicketForDescription, setSelectedTicketForDescription] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -64,6 +67,16 @@ export default function Tickets() {
         ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
       )
     );
+  };
+
+  const handleViewDescription = (ticket) => {
+    setSelectedTicketForDescription(ticket);
+    setShowDescriptionModal(true);
+  };
+
+  const handleCloseDescriptionModal = () => {
+    setShowDescriptionModal(false);
+    setSelectedTicketForDescription(null);
   };
 
   // Filter tickets based on search term
@@ -392,9 +405,6 @@ export default function Tickets() {
                       <SortIcon columnKey="title" />
                     </div>
                   </th>
-                  <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
-                    Description
-                  </th>
                   <th
                     className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                     onClick={() => handleSort("createdAt")}
@@ -403,6 +413,9 @@ export default function Tickets() {
                       Created At
                       <SortIcon columnKey="createdAt" />
                     </div>
+                  </th>
+                  <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
+                    Description
                   </th>
                   <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
                     Screenshot
@@ -458,11 +471,34 @@ export default function Tickets() {
                       <td className="py-4 px-4 text-gray-200 text-sm">
                         {ticket.title}
                       </td>
-                      <td className="py-4 px-4 text-gray-200 text-sm max-w-xs truncate">
-                        {ticket.description}
-                      </td>
                       <td className="py-4 px-4 text-gray-200 text-sm">
                         {formatDate(ticket.createdAt)}
+                      </td>
+                      <td className="py-4 px-4">
+                        <button
+                          onClick={() => handleViewDescription(ticket)}
+                          className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                            />
+                          </svg>
+                        </button>
                       </td>
                       <td className="py-4 px-4">
                         <button
@@ -521,6 +557,13 @@ export default function Tickets() {
         onClose={handleCloseStatusModal}
         ticket={selectedTicket}
         onStatusUpdated={handleStatusUpdated}
+      />
+
+      {/* Description Modal */}
+      <TicketDescriptionModal
+        open={showDescriptionModal}
+        onClose={handleCloseDescriptionModal}
+        ticket={selectedTicketForDescription}
       />
     </div>
   );
