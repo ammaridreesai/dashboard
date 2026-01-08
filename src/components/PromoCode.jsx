@@ -104,6 +104,10 @@ export default function PromoCode() {
   // Filter assigned promos based on search term
   const filteredAssignedPromos = assignedPromos.filter(
     (assignedPromo) =>
+      (assignedPromo.user?.userDetails?.userName &&
+        assignedPromo.user.userDetails.userName.toLowerCase().includes(
+          searchTerm.toLowerCase()
+        )) ||
       (assignedPromo.user?.FullName &&
         assignedPromo.user.FullName.toLowerCase().includes(
           searchTerm.toLowerCase()
@@ -162,8 +166,8 @@ export default function PromoCode() {
 
     // Handle nested user and promoCode objects
     if (sortConfig.key === "userName") {
-      aValue = a.user?.FullName || "";
-      bValue = b.user?.FullName || "";
+      aValue = a.user?.userDetails?.userName || a.user?.FullName || "";
+      bValue = b.user?.userDetails?.userName || b.user?.FullName || "";
     } else if (sortConfig.key === "userEmail") {
       aValue = a.user?.Email || "";
       bValue = b.user?.Email || "";
@@ -857,7 +861,7 @@ export default function PromoCode() {
                         className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
                       >
                         <td className="py-4 px-4 text-gray-200 text-sm">
-                          {assignedPromo.user?.FullName || "N/A"}
+                          {assignedPromo.user?.userDetails?.userName || assignedPromo.user?.FullName || "N/A"}
                         </td>
                         <td className="py-4 px-4 text-gray-200 text-sm">
                           {assignedPromo.user?.Email || "N/A"}

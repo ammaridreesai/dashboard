@@ -76,7 +76,7 @@ export default function AssignedPromoDetailModal({ open, onClose, assignedPromo 
                 <div>
                   <label className="text-gray-400 text-sm">Name</label>
                   <p className="text-white mt-1">
-                    {assignedPromo.user?.FullName || 'N/A'}
+                    {assignedPromo.user?.userDetails?.userName || assignedPromo.user?.FullName || 'N/A'}
                   </p>
                 </div>
                 <div>
