@@ -13,7 +13,8 @@ export default function Tickets() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [selectedTicketForDetails, setSelectedTicketForDetails] = useState(null);
+  const [selectedTicketForDetails, setSelectedTicketForDetails] =
+    useState(null);
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -58,8 +59,8 @@ export default function Tickets() {
   const handleStatusUpdated = (ticketId, newStatus) => {
     setTickets((prevTickets) =>
       prevTickets.map((ticket) =>
-        ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
-      )
+        ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket,
+      ),
     );
   };
 
@@ -70,8 +71,12 @@ export default function Tickets() {
       ticket.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (ticket.user?.FullName && ticket.user.FullName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (ticket.user?.Email && ticket.user.Email.toLowerCase().includes(searchTerm.toLowerCase()))
+      (ticket.user?.userDetails?.userName &&
+        ticket.user.userDetails.userName.toLowerCase().includes(
+          searchTerm.toLowerCase(),
+        )) ||
+      (ticket.user?.Email &&
+        ticket.user.Email.toLowerCase().includes(searchTerm.toLowerCase())),
   );
 
   // Sort tickets
@@ -82,8 +87,8 @@ export default function Tickets() {
 
     // Handle nested user object for name and email
     if (sortConfig.key === "userName") {
-      aValue = a.user?.FullName || "";
-      bValue = b.user?.FullName || "";
+      aValue = a.user?.userDetails?.userName || "";
+      bValue = b.user?.userDetails?.userName || "";
     } else if (sortConfig.key === "userEmail") {
       aValue = a.user?.Email || "";
       bValue = b.user?.Email || "";
@@ -130,7 +135,7 @@ export default function Tickets() {
 
     try {
       const dataToExport = sortedTickets.map((ticket) => ({
-        "User Name": ticket.user?.FullName || "N/A",
+        "User Name": ticket.user?.userDetails?.userName || "N/A",
         "User Email": ticket.user?.Email || "N/A",
         Type: ticket.type,
         Status: ticket.status,
@@ -426,7 +431,7 @@ export default function Tickets() {
                       className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
                     >
                       <td className="py-4 px-4 text-gray-200 text-sm">
-                        {ticket.user?.FullName || "N/A"}
+                        {ticket.user?.userDetails?.userName || "N/A"}
                       </td>
                       <td className="py-4 px-4 text-gray-200 text-sm">
                         {ticket.user?.Email || "N/A"}
@@ -434,7 +439,7 @@ export default function Tickets() {
                       <td className="py-4 px-4">
                         <span
                           className={`${getTypeColor(
-                            ticket.type
+                            ticket.type,
                           )} text-white px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap`}
                         >
                           {ticket.type}
@@ -443,7 +448,7 @@ export default function Tickets() {
                       <td className="py-4 px-4">
                         <span
                           className={`${getStatusColor(
-                            ticket.status
+                            ticket.status,
                           )} text-white px-3 py-1 rounded-full text-sm font-medium`}
                         >
                           {ticket.status}
