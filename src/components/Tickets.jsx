@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ScreenshotModal from "./ScreenshotModal";
+import TicketDetailsModal from "./TicketDetailsModal";
 import UpdateStatusModal from "./UpdateStatusModal";
-import TicketDescriptionModal from "./TicketDescriptionModal";
 import Header from "./Header";
 import apiClient from "../services/api";
 import * as XLSX from "xlsx";
@@ -11,12 +10,10 @@ import * as XLSX from "xlsx";
 export default function Tickets() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
-  const [selectedScreenshot, setSelectedScreenshot] = useState(null);
-  const [showModal, setShowModal] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
-  const [showDescriptionModal, setShowDescriptionModal] = useState(false);
-  const [selectedTicketForDescription, setSelectedTicketForDescription] = useState(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedTicketForDetails, setSelectedTicketForDetails] = useState(null);
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -38,17 +35,14 @@ export default function Tickets() {
     fetchTickets();
   }, []);
 
-  const handleViewScreenshot = (ticket) => {
-    setSelectedScreenshot({
-      screenshot: ticket.screenshotUrl,
-      title: ticket.title,
-    });
-    setShowModal(true);
+  const handleViewDetails = (ticket) => {
+    setSelectedTicketForDetails(ticket);
+    setShowDetailsModal(true);
   };
 
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setSelectedScreenshot(null);
+  const handleCloseDetailsModal = () => {
+    setShowDetailsModal(false);
+    setSelectedTicketForDetails(null);
   };
 
   const handleUpdateStatus = (ticket) => {
@@ -67,16 +61,6 @@ export default function Tickets() {
         ticket.id === ticketId ? { ...ticket, status: newStatus } : ticket
       )
     );
-  };
-
-  const handleViewDescription = (ticket) => {
-    setSelectedTicketForDescription(ticket);
-    setShowDescriptionModal(true);
-  };
-
-  const handleCloseDescriptionModal = () => {
-    setShowDescriptionModal(false);
-    setSelectedTicketForDescription(null);
   };
 
   // Filter tickets based on search term
@@ -415,10 +399,7 @@ export default function Tickets() {
                     </div>
                   </th>
                   <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
-                    Description
-                  </th>
-                  <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
-                    Screenshot
+                    Details
                   </th>
                   <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
                     Actions
@@ -428,13 +409,13 @@ export default function Tickets() {
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan="9" className="py-8 text-center">
+                    <td colSpan="8" className="py-8 text-center">
                       <div className="text-gray-400">Loading tickets...</div>
                     </td>
                   </tr>
                 ) : sortedTickets.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="py-8 text-center">
+                    <td colSpan="8" className="py-8 text-center">
                       <div className="text-gray-400">No tickets found</div>
                     </td>
                   </tr>
@@ -476,33 +457,7 @@ export default function Tickets() {
                       </td>
                       <td className="py-4 px-4">
                         <button
-                          onClick={() => handleViewDescription(ticket)}
-                          className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
-                          </svg>
-                        </button>
-                      </td>
-                      <td className="py-4 px-4">
-                        <button
-                          onClick={() => handleViewScreenshot(ticket)}
+                          onClick={() => handleViewDetails(ticket)}
                           className="text-gray-400 hover:text-white transition-colors cursor-pointer"
                         >
                           <svg
@@ -543,12 +498,11 @@ export default function Tickets() {
         </div>
       </div>
 
-      {/* Screenshot Modal */}
-      <ScreenshotModal
-        open={showModal}
-        onClose={handleCloseModal}
-        screenshot={selectedScreenshot?.screenshot}
-        title={selectedScreenshot?.title}
+      {/* Ticket Details Modal */}
+      <TicketDetailsModal
+        open={showDetailsModal}
+        onClose={handleCloseDetailsModal}
+        ticket={selectedTicketForDetails}
       />
 
       {/* Update Status Modal */}
@@ -557,13 +511,6 @@ export default function Tickets() {
         onClose={handleCloseStatusModal}
         ticket={selectedTicket}
         onStatusUpdated={handleStatusUpdated}
-      />
-
-      {/* Description Modal */}
-      <TicketDescriptionModal
-        open={showDescriptionModal}
-        onClose={handleCloseDescriptionModal}
-        ticket={selectedTicketForDescription}
       />
     </div>
   );
