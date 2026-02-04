@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const BASE_URL = "https://thefmastery.co.uk";
+// const BASE_URL = "https://thefmastery.co.uk";
+const BASE_URL = "http://localhost:3200";
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -21,7 +22,7 @@ apiClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 apiClient.interceptors.response.use(
@@ -43,7 +44,7 @@ apiClient.interceptors.response.use(
               `${BASE_URL}/authentication/refresh`,
               {
                 refresh_token: refreshToken,
-              }
+              },
             );
 
             if (response.data.isRequestSuccessful) {
@@ -70,7 +71,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;

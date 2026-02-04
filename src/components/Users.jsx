@@ -106,6 +106,7 @@ export default function Users() {
         "Created At": user.createdAt,
         Status: user.status,
         Plan: user.plan,
+        "Profile Completed": user.isProfileCompleted ? "Yes" : "No",
         Snapchat: user.snapchat || "Not provided",
         TikTok: user.tiktok || "Not provided",
         Instagram: user.instagram || "Not provided",
@@ -345,19 +346,28 @@ export default function Users() {
                       <SortIcon columnKey="plan" />
                     </div>
                   </th>
+                  <th
+                    className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
+                    onClick={() => handleSort("isProfileCompleted")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Profile Completed
+                      <SortIcon columnKey="isProfileCompleted" />
+                    </div>
+                  </th>
                   <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap"></th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan="8" className="py-8 text-center">
+                    <td colSpan="9" className="py-8 text-center">
                       <div className="text-gray-400">Loading users...</div>
                     </td>
                   </tr>
                 ) : sortedUsers.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="py-8 text-center">
+                    <td colSpan="9" className="py-8 text-center">
                       <div className="text-gray-400">No users found</div>
                     </td>
                   </tr>
@@ -386,6 +396,13 @@ export default function Users() {
                         </span>
                       </td>
                       <td className="py-4 px-4 text-gray-200 text-sm">{user.plan}</td>
+                      <td className="py-4 px-4">
+                        <span
+                          className={`${user.isProfileCompleted ? 'bg-green-500' : 'bg-red-500'} text-white px-3 py-1 rounded-full text-sm font-medium`}
+                        >
+                          {user.isProfileCompleted ? 'Yes' : 'No'}
+                        </span>
+                      </td>
                       <td className="py-4 px-4">
                         <button
                           onClick={() => handleViewUser(user)}

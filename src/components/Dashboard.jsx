@@ -474,18 +474,26 @@ export default function Dashboard() {
                     {sortField === "plan" &&
                       (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
+                  <th
+                    className="text-left py-3 px-4 text-white text-sm font-medium cursor-pointer hover:text-gray-300 whitespace-nowrap"
+                    onClick={() => handleSort("isProfileCompleted")}
+                  >
+                    Profile Completed{" "}
+                    {sortField === "isProfileCompleted" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {isLoadingUsers ? (
                   <tr>
-                    <td colSpan="7" className="py-8 text-center">
+                    <td colSpan="8" className="py-8 text-center">
                       <div className="text-gray-400">Loading users...</div>
                     </td>
                   </tr>
                 ) : filteredAndSortedUsers.length === 0 ? (
                   <tr>
-                    <td colSpan="7" className="py-8 text-center">
+                    <td colSpan="8" className="py-8 text-center">
                       <div className="text-gray-400">No users found</div>
                     </td>
                   </tr>
@@ -518,6 +526,15 @@ export default function Dashboard() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-gray-300 text-sm">{user.plan}</td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium text-white ${
+                            user.isProfileCompleted ? "bg-green-500" : "bg-red-500"
+                          }`}
+                        >
+                          {user.isProfileCompleted ? "Yes" : "No"}
+                        </span>
+                      </td>
                     </tr>
                   ))
                 )}

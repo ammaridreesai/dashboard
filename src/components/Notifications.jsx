@@ -7,6 +7,8 @@ import apiClient from '../services/api';
 export default function Notifications() {
   const [userFilter, setUserFilter] = useState('all'); // 'all', 'paid', 'unpaid', 'select'
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [joiningDateFrom, setJoiningDateFrom] = useState('');
+  const [joiningDateTo, setJoiningDateTo] = useState('');
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,13 +41,34 @@ export default function Notifications() {
     fetchUsers();
   }, [userFilter, users.length]);
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(
-    (user) =>
+  // Filter users based on search term and joining date
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      user.role.toLowerCase().includes(searchTerm.toLowerCase());
+
+    let matchesDate = true;
+    if (joiningDateFrom || joiningDateTo) {
+      if (!user.createdAt) {
+        matchesDate = false;
+      } else {
+        const createdDate = new Date(user.createdAt);
+        if (joiningDateFrom && new Date(joiningDateFrom) > createdDate) {
+          matchesDate = false;
+        }
+        if (joiningDateTo) {
+          const toDate = new Date(joiningDateTo);
+          toDate.setHours(23, 59, 59, 999);
+          if (toDate < createdDate) {
+            matchesDate = false;
+          }
+        }
+      }
+    }
+
+    return matchesSearch && matchesDate;
+  });
 
   // Sort users
   const sortedUsers = [...filteredUsers].sort((a, b) => {
@@ -407,28 +430,49 @@ export default function Notifications() {
           {/* Users Grid - Only show when "Select Users" is selected */}
           {userFilter === 'select' && (
             <>
-              {/* Search Bar */}
-              <div className="mb-6">
+              {/* Search Bar and Joining Date Filter */}
+              <div className="flex items-end gap-6 mb-6">
                 <div className="relative w-64">
-                  <svg
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  <label className="block text-gray-300 text-sm mb-1">Search</label>
+                  <div className="relative">
+                    <svg
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                     />
-                  </svg>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1">Joining Date From</label>
                   <input
-                    type="text"
-                    placeholder="Search"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                    type="date"
+                    value={joiningDateFrom}
+                    onChange={(e) => setJoiningDateFrom(e.target.value)}
+                    className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-gray-300 text-sm mb-1">Joining Date To</label>
+                  <input
+                    type="date"
+                    value={joiningDateTo}
+                    onChange={(e) => setJoiningDateTo(e.target.value)}
+                    className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
@@ -523,12 +567,21 @@ export default function Notifications() {
                             <SortIcon columnKey="plan" />
                           </div>
                         </th>
+                        <th
+                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
+                          onClick={() => handleSort('isProfileCompleted')}
+                        >
+                          <div className="flex items-center gap-2">
+                            Profile Completed
+                            <SortIcon columnKey="isProfileCompleted" />
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {sortedUsers.length === 0 ? (
                         <tr>
-                          <td colSpan="8" className="py-8 text-center text-gray-400">
+                          <td colSpan="9" className="py-8 text-center text-gray-400">
                             No users found
                           </td>
                         </tr>
@@ -565,6 +618,13 @@ export default function Notifications() {
                               </span>
                             </td>
                             <td className="py-4 px-4 text-gray-200 text-sm">{user.plan}</td>
+                            <td className="py-4 px-4">
+                              <span
+                                className={`${user.isProfileCompleted ? 'bg-green-500' : 'bg-red-500'} text-white px-3 py-1 rounded-full text-sm font-medium`}
+                              >
+                                {user.isProfileCompleted ? 'Yes' : 'No'}
+                              </span>
+                            </td>
                           </tr>
                         ))
                       )}
