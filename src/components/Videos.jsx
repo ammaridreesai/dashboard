@@ -354,7 +354,7 @@ export default function Videos() {
                       onClick={() => handleSort("EssentialCategory")}
                     >
                       <div className="flex items-center gap-2">
-                        Category
+                        Essential Category
                         <SortIcon columnKey="EssentialCategory" />
                       </div>
                     </th>
@@ -363,7 +363,7 @@ export default function Videos() {
                       onClick={() => handleSort("EssentialSubcategory")}
                     >
                       <div className="flex items-center gap-2">
-                        Subcategory
+                        Essential Subcategory
                         <SortIcon columnKey="EssentialSubcategory" />
                       </div>
                     </th>
@@ -414,15 +414,15 @@ export default function Videos() {
                         className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
                       >
                         <td className="py-4 px-4 text-gray-200 text-sm">{video.Title}</td>
-                        <td className="py-4 px-4 text-gray-200 text-sm max-w-xs truncate">{video.Description}</td>
+                        <td className="py-4 px-4 text-gray-200 text-sm max-w-xs truncate">{video.Description || "N/A"}</td>
                         <td className="py-4 px-4">
                           <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                             {video.PracticeType}
                           </span>
                         </td>
                         <td className="py-4 px-4 text-gray-200 text-sm">{video.Level}</td>
-                        <td className="py-4 px-4 text-gray-200 text-sm">{video.EssentialCategory}</td>
-                        <td className="py-4 px-4 text-gray-200 text-sm">{video.EssentialSubcategory}</td>
+                        <td className="py-4 px-4 text-gray-200 text-sm">{video.PracticeType === "Essential" ? video.EssentialCategory : "-"}</td>
+                        <td className="py-4 px-4 text-gray-200 text-sm">{video.PracticeType === "Essential" ? video.EssentialSubcategory : "-"}</td>
                         <td className="py-4 px-4 text-sm">
                           <div className="flex flex-wrap gap-1">
                             {video.Tags?.split(",").map((tag, index) => (

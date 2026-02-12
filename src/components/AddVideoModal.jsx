@@ -12,12 +12,10 @@ const defaultFormData = {
   level: 1,
   essentialCategory: "",
   essentialSubCategory: "",
-  orderIndex: 1,
   tags: "",
   videoTime: 0,
   xpToBeGained: 0,
   xpToBeGainedOnWatch: 0,
-  essentialOrder: 1,
 };
 
 export default function AddVideoModal({ open, onClose, onSubmit, video }) {
@@ -38,12 +36,10 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
         level: video.Level || 1,
         essentialCategory: video.EssentialCategory || "",
         essentialSubCategory: video.EssentialSubcategory || "",
-        orderIndex: video.OrderIndex || 1,
         tags: video.Tags || "",
         videoTime: video.VideoTime || 0,
         xpToBeGained: video.XpToBeGained || 0,
         xpToBeGainedOnWatch: video.XpToBeGainedOnWatch || 0,
-        essentialOrder: video.EssentialOrder || 1,
       });
     } else {
       setFormData(defaultFormData);
@@ -65,7 +61,12 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
     setError(null);
 
     try {
-      await onSubmit(formData);
+      const submitData = { ...formData };
+      if (submitData.practiceType !== "Essential") {
+        submitData.essentialCategory = null;
+        submitData.essentialSubCategory = null;
+      }
+      await onSubmit(submitData);
       if (!isEditMode) setFormData(defaultFormData);
       onClose();
     } catch (err) {
@@ -168,7 +169,6 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
                 className={`${inputClass} resize-none`}
                 placeholder="Enter video description"
                 rows={2}
-                required
               />
             </div>
 
@@ -197,30 +197,34 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
               />
             </div>
 
-            <div>
-              <label className={labelClass}>Category</label>
-              <input
-                type="text"
-                name="essentialCategory"
-                value={formData.essentialCategory}
-                onChange={handleChange}
-                className={inputClass}
-                placeholder="e.g. Flicks"
-                required
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Subcategory</label>
-              <input
-                type="text"
-                name="essentialSubCategory"
-                value={formData.essentialSubCategory}
-                onChange={handleChange}
-                className={inputClass}
-                placeholder="e.g. Novice"
-                required
-              />
-            </div>
+            {formData.practiceType === "Essential" && (
+              <>
+                <div>
+                  <label className={labelClass}>Essential Category</label>
+                  <input
+                    type="text"
+                    name="essentialCategory"
+                    value={formData.essentialCategory}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="e.g. Flicks"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Essential Subcategory</label>
+                  <input
+                    type="text"
+                    name="essentialSubCategory"
+                    value={formData.essentialSubCategory}
+                    onChange={handleChange}
+                    className={inputClass}
+                    placeholder="e.g. Novice"
+                    required
+                  />
+                </div>
+              </>
+            )}
 
             <div className="col-span-2">
               <label className={labelClass}>
@@ -248,7 +252,7 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
                 value={formData.videoTime}
                 onChange={handleChange}
                 className={inputClass}
-                min={0}
+                min={1}
                 required
               />
             </div>
@@ -274,31 +278,6 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
                 onChange={handleChange}
                 className={inputClass}
                 min={0}
-                required
-              />
-            </div>
-            <div>
-              <label className={labelClass}>Order Index</label>
-              <input
-                type="number"
-                name="orderIndex"
-                value={formData.orderIndex}
-                onChange={handleChange}
-                className={inputClass}
-                min={1}
-                required
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Essential Order</label>
-              <input
-                type="number"
-                name="essentialOrder"
-                value={formData.essentialOrder}
-                onChange={handleChange}
-                className={inputClass}
-                min={1}
                 required
               />
             </div>

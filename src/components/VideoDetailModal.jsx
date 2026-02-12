@@ -87,7 +87,7 @@ export default function VideoDetailModal({ open, onClose, video }) {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Description</span>
-            <span className="text-white text-right max-w-[60%]">{video.Description}</span>
+            <span className="text-white text-right max-w-[60%]">{video.Description || "N/A"}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Practice Type</span>
@@ -97,14 +97,18 @@ export default function VideoDetailModal({ open, onClose, video }) {
             <span className="text-gray-400">Level</span>
             <span className="text-white">{video.Level}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Category</span>
-            <span className="text-white">{video.EssentialCategory}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Subcategory</span>
-            <span className="text-white">{video.EssentialSubcategory}</span>
-          </div>
+          {video.PracticeType === "Essential" && (
+            <>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Essential Category</span>
+                <span className="text-white">{video.EssentialCategory}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Essential Subcategory</span>
+                <span className="text-white">{video.EssentialSubcategory}</span>
+              </div>
+            </>
+          )}
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Tags</span>
             <span className="text-white">{video.Tags}</span>
@@ -120,14 +124,6 @@ export default function VideoDetailModal({ open, onClose, video }) {
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">XP (Watch)</span>
             <span className="text-white">{video.XpToBeGainedOnWatch}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Order Index</span>
-            <span className="text-white">{video.OrderIndex}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-400">Essential Order</span>
-            <span className="text-white">{video.EssentialOrder}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-400">Uploaded At</span>
