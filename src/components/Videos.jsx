@@ -414,7 +414,7 @@ export default function Videos() {
                         className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
                       >
                         <td className="py-4 px-4 text-gray-200 text-sm">{video.Title}</td>
-                        <td className="py-4 px-4 text-gray-200 text-sm max-w-xs truncate">{video.Description || "N/A"}</td>
+                        <td className="py-4 px-4 text-gray-200 text-sm max-w-xs truncate">{video.Description && video.Description !== "null" ? video.Description : "N/A"}</td>
                         <td className="py-4 px-4">
                           <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                             {video.PracticeType}
