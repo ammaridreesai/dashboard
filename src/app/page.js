@@ -8,6 +8,7 @@ import Subscriptions from "@/components/Subscriptions";
 import Notifications from "@/components/Notifications";
 import PromoCode from "@/components/PromoCode";
 import Tickets from "@/components/Tickets";
+import Videos from "@/components/Videos";
 import LoginForm from "@/components/LoginForm";
 import { authService } from "@/services/auth";
 
@@ -77,6 +78,8 @@ export default function Home() {
         return <PromoCode />;
       case 'tickets':
         return <Tickets />;
+      case 'videos':
+        return <Videos />;
       default:
         return <Dashboard />;
     }
