@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const BASE_URL = "https://thefmastery.co.uk"; // For production
-//const BASE_URL = "http://18.170.98.40:3200"; //Staging
+//const BASE_URL = "https://thefmastery.co.uk"; // For production
+const BASE_URL = "http://18.170.98.40:3200"; //Staging
 //const BASE_URL = "http://localhost:3200"; // For local development
 
 const apiClient = axios.create({
