@@ -61,8 +61,14 @@ export default function Subscriptions() {
   const sortedSubscriptions = [...filteredSubscriptions].sort((a, b) => {
     if (!sortConfig.key) return 0;
 
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+
+    // Sort date columns chronologically
+    if (sortConfig.key === "subscriptionStartDate" || sortConfig.key === "subscriptionEndDate") {
+      aValue = aValue ? new Date(aValue).getTime() : 0;
+      bValue = bValue ? new Date(bValue).getTime() : 0;
+    }
 
     if (aValue < bValue) {
       return sortConfig.direction === "asc" ? -1 : 1;
@@ -269,6 +275,24 @@ export default function Subscriptions() {
                         <SortIcon columnKey="status" />
                       </div>
                     </th>
+                    <th
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
+                      onClick={() => handleSort("subscriptionStartDate")}
+                    >
+                      <div className="flex items-center gap-2">
+                        Start Date
+                        <SortIcon columnKey="subscriptionStartDate" />
+                      </div>
+                    </th>
+                    <th
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
+                      onClick={() => handleSort("subscriptionEndDate")}
+                    >
+                      <div className="flex items-center gap-2">
+                        End Date
+                        <SortIcon columnKey="subscriptionEndDate" />
+                      </div>
+                    </th>
                     <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap"></th>
                   </tr>
                 </thead>
@@ -292,6 +316,16 @@ export default function Subscriptions() {
                           >
                             {subscription.status}
                           </span>
+                        </td>
+                        <td className="py-4 px-4 text-gray-200 text-sm">
+                          {subscription.subscriptionStartDate
+                            ? new Date(subscription.subscriptionStartDate).toLocaleDateString()
+                            : "N/A"}
+                        </td>
+                        <td className="py-4 px-4 text-gray-200 text-sm">
+                          {subscription.subscriptionEndDate
+                            ? new Date(subscription.subscriptionEndDate).toLocaleDateString()
+                            : "N/A"}
                         </td>
                         <td className="py-4 px-4">
                           <button
@@ -323,7 +357,7 @@ export default function Subscriptions() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="py-8 text-center text-gray-400">
+                      <td colSpan="7" className="py-8 text-center text-gray-400">
                         No subscriptions found
                       </td>
                     </tr>

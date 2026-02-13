@@ -54,8 +54,14 @@ export default function Users() {
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     if (!sortConfig.key) return 0;
 
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+
+    // Sort date columns chronologically
+    if (sortConfig.key === "createdAt") {
+      aValue = aValue ? new Date(aValue).getTime() : 0;
+      bValue = bValue ? new Date(bValue).getTime() : 0;
+    }
 
     if (aValue < bValue) {
       return sortConfig.direction === "asc" ? -1 : 1;
