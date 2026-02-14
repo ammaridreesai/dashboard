@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import Header from './Header';
 import apiClient from '../services/api';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 export default function Notifications() {
   const [userFilter, setUserFilter] = useState('all'); // 'all', 'paid', 'unpaid', 'select'
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [joiningDateFrom, setJoiningDateFrom] = useState('');
-  const [joiningDateTo, setJoiningDateTo] = useState('');
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [startDate, endDate] = dateRange;
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,16 +51,16 @@ export default function Notifications() {
       user.role.toLowerCase().includes(searchTerm.toLowerCase());
 
     let matchesDate = true;
-    if (joiningDateFrom || joiningDateTo) {
+    if (startDate || endDate) {
       if (!user.createdAt) {
         matchesDate = false;
       } else {
         const createdDate = new Date(user.createdAt);
-        if (joiningDateFrom && new Date(joiningDateFrom) > createdDate) {
+        if (startDate && startDate > createdDate) {
           matchesDate = false;
         }
-        if (joiningDateTo) {
-          const toDate = new Date(joiningDateTo);
+        if (endDate) {
+          const toDate = new Date(endDate);
           toDate.setHours(23, 59, 59, 999);
           if (toDate < createdDate) {
             matchesDate = false;
@@ -458,21 +460,16 @@ export default function Notifications() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1">Joining Date From</label>
-                  <input
-                    type="date"
-                    value={joiningDateFrom}
-                    onChange={(e) => setJoiningDateFrom(e.target.value)}
-                    className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-300 text-sm mb-1">Joining Date To</label>
-                  <input
-                    type="date"
-                    value={joiningDateTo}
-                    onChange={(e) => setJoiningDateTo(e.target.value)}
-                    className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-gray-300 text-sm mb-1">Joining Date</label>
+                  <DatePicker
+                    selectsRange
+                    startDate={startDate}
+                    endDate={endDate}
+                    onChange={(update) => setDateRange(update)}
+                    isClearable
+                    placeholderText="Select date range"
+                    dateFormat="MMM dd, yyyy"
+                    className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
                   />
                 </div>
               </div>
