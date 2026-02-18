@@ -4,7 +4,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
   return (
     <div className="w-48 h-screen bg-[#1A2332] flex flex-col fixed left-0 top-0">
       {/* Logo */}
-      <div className="p-6 flex items-center justify-center">
+      <div className="p-6 flex items-center justify-center shrink-0">
         <img
           src="/assets/mastery-logo.svg"
           alt="Mastery Logo"
@@ -13,7 +13,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 overflow-y-auto p-4">
         <ul className="space-y-2">
           <li>
             <button
@@ -92,6 +92,21 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
           </li>
           <li>
             <button
+              onClick={() => setActiveView('videos')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer text-sm ${
+                activeView === 'videos'
+                  ? 'text-white bg-[#2A3441]'
+                  : 'text-gray-400 hover:bg-[#2A3441] hover:text-white'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span>Videos</span>
+            </button>
+          </li>
+          <li>
+            <button
               onClick={() => setActiveView('tickets')}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer text-sm ${
                 activeView === 'tickets'
@@ -109,7 +124,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
       </nav>
 
       {/* Log Out */}
-      <div className="p-4">
+      <div className="p-4 shrink-0">
         <button
           onClick={onLogout}
           className="w-full flex items-center gap-3 px-4 py-3 text-red-400 rounded-lg hover:bg-[#2A3441] transition-colors cursor-pointer text-sm"

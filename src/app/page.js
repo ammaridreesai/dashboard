@@ -8,6 +8,7 @@ import Subscriptions from "@/components/Subscriptions";
 import Notifications from "@/components/Notifications";
 import PromoCode from "@/components/PromoCode";
 import Tickets from "@/components/Tickets";
+import Videos from "@/components/Videos";
 import LoginForm from "@/components/LoginForm";
 import { authService } from "@/services/auth";
 
@@ -68,15 +69,17 @@ export default function Home() {
       case 'dashboard':
         return <Dashboard />;
       case 'users':
-        return <Users />;
+        return <Users onNavigate={setActiveView} />;
       case 'subscriptions':
-        return <Subscriptions />;
+        return <Subscriptions onNavigate={setActiveView} />;
       case 'notifications':
-        return <Notifications />;
+        return <Notifications onNavigate={setActiveView} />;
       case 'promocode':
-        return <PromoCode />;
+        return <PromoCode onNavigate={setActiveView} />;
       case 'tickets':
-        return <Tickets />;
+        return <Tickets onNavigate={setActiveView} />;
+      case 'videos':
+        return <Videos onNavigate={setActiveView} />;
       default:
         return <Dashboard />;
     }

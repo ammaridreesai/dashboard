@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import Header from './Header';
 import apiClient from '../services/api';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
-export default function Notifications() {
+export default function Notifications({ onNavigate }) {
   const [userFilter, setUserFilter] = useState('all'); // 'all', 'paid', 'unpaid', 'select'
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [joiningDateFrom, setJoiningDateFrom] = useState('');
-  const [joiningDateTo, setJoiningDateTo] = useState('');
+  const [dateRange, setDateRange] = useState([null, null]);
+  const [startDate, endDate] = dateRange;
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,16 +51,16 @@ export default function Notifications() {
       user.role.toLowerCase().includes(searchTerm.toLowerCase());
 
     let matchesDate = true;
-    if (joiningDateFrom || joiningDateTo) {
+    if (startDate || endDate) {
       if (!user.createdAt) {
         matchesDate = false;
       } else {
         const createdDate = new Date(user.createdAt);
-        if (joiningDateFrom && new Date(joiningDateFrom) > createdDate) {
+        if (startDate && startDate > createdDate) {
           matchesDate = false;
         }
-        if (joiningDateTo) {
-          const toDate = new Date(joiningDateTo);
+        if (endDate) {
+          const toDate = new Date(endDate);
           toDate.setHours(23, 59, 59, 999);
           if (toDate < createdDate) {
             matchesDate = false;
@@ -294,19 +296,21 @@ export default function Notifications() {
       <div className="p-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-gray-400 mb-6">
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-            />
-          </svg>
+          <button onClick={() => onNavigate('dashboard')} className="hover:text-white cursor-pointer">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+          </button>
           <span>&gt;</span>
           <span>Notifications</span>
         </div>
@@ -458,21 +462,16 @@ export default function Notifications() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-gray-300 text-sm mb-1">Joining Date From</label>
-                  <input
-                    type="date"
-                    value={joiningDateFrom}
-                    onChange={(e) => setJoiningDateFrom(e.target.value)}
-                    className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-gray-300 text-sm mb-1">Joining Date To</label>
-                  <input
-                    type="date"
-                    value={joiningDateTo}
-                    onChange={(e) => setJoiningDateTo(e.target.value)}
-                    className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-gray-300 text-sm mb-1">Joining Date</label>
+                  <DatePicker
+                    selectsRange
+                    startDate={startDate}
+                    endDate={endDate}
+                    onChange={(update) => setDateRange(update)}
+                    isClearable
+                    placeholderText="Select date range"
+                    dateFormat="MMM dd, yyyy"
+                    className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
                   />
                 </div>
               </div>
