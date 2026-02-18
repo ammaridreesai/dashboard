@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { Modal } from "react-responsive-modal";
 import "react-responsive-modal/styles.css";
 
+const CLOUDFRONT_BASE_URL = "https://d39dut4adru228.cloudfront.net/";
+
 const defaultFormData = {
   title: "",
   description: "",
@@ -27,11 +29,15 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
 
   useEffect(() => {
     if (video) {
+      const fullUrl = video.CloudFront_URL || "";
+      const urlPath = fullUrl.startsWith(CLOUDFRONT_BASE_URL)
+        ? fullUrl.slice(CLOUDFRONT_BASE_URL.length)
+        : fullUrl;
       setFormData({
         id: video.id,
         title: video.Title || "",
         description: video.Description || "",
-        url: video.CloudFront_URL || "",
+        url: urlPath,
         practiceType: video.PracticeType || "Drill",
         level: video.Level || 1,
         essentialCategory: video.EssentialCategory || "",
@@ -62,6 +68,7 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
 
     try {
       const submitData = { ...formData };
+      submitData.url = CLOUDFRONT_BASE_URL + submitData.url;
       if (submitData.practiceType !== "Essential") {
         submitData.essentialCategory = null;
         submitData.essentialSubCategory = null;
@@ -135,7 +142,7 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            <div className="col-span-2">
               <label className={labelClass}>Title</label>
               <input
                 type="text"
@@ -147,17 +154,22 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
                 required
               />
             </div>
-            <div>
+            <div className="col-span-2">
               <label className={labelClass}>CloudFront URL</label>
-              <input
-                type="url"
-                name="url"
-                value={formData.url}
-                onChange={handleChange}
-                className={inputClass}
-                placeholder="https://example.cloudfront.net/videos/1.mp4"
-                required
-              />
+              <div className="flex">
+                <span className="inline-flex items-center px-3 bg-[#1E2532] border border-r-0 border-gray-600 rounded-l-lg text-gray-400 text-sm whitespace-nowrap select-none">
+                  {CLOUDFRONT_BASE_URL}
+                </span>
+                <input
+                  type="text"
+                  name="url"
+                  value={formData.url}
+                  onChange={handleChange}
+                  className="flex-1 min-w-0 px-3 py-2 bg-[#2C3947] border border-gray-600 rounded-r-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  placeholder="videos/1.mp4"
+                  required
+                />
+              </div>
             </div>
 
             <div className="col-span-2">

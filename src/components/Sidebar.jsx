@@ -4,7 +4,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
   return (
     <div className="w-48 h-screen bg-[#1A2332] flex flex-col fixed left-0 top-0">
       {/* Logo */}
-      <div className="p-6 flex items-center justify-center">
+      <div className="p-6 flex items-center justify-center shrink-0">
         <img
           src="/assets/mastery-logo.svg"
           alt="Mastery Logo"
@@ -13,7 +13,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
       </div>
 
       {/* Menu Items */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 overflow-y-auto p-4">
         <ul className="space-y-2">
           <li>
             <button
@@ -124,7 +124,7 @@ export default function Sidebar({ onLogout, activeView, setActiveView }) {
       </nav>
 
       {/* Log Out */}
-      <div className="p-4">
+      <div className="p-4 shrink-0">
         <button
           onClick={onLogout}
           className="w-full flex items-center gap-3 px-4 py-3 text-red-400 rounded-lg hover:bg-[#2A3441] transition-colors cursor-pointer text-sm"

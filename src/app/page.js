@@ -69,17 +69,17 @@ export default function Home() {
       case 'dashboard':
         return <Dashboard />;
       case 'users':
-        return <Users />;
+        return <Users onNavigate={setActiveView} />;
       case 'subscriptions':
-        return <Subscriptions />;
+        return <Subscriptions onNavigate={setActiveView} />;
       case 'notifications':
-        return <Notifications />;
+        return <Notifications onNavigate={setActiveView} />;
       case 'promocode':
-        return <PromoCode />;
+        return <PromoCode onNavigate={setActiveView} />;
       case 'tickets':
-        return <Tickets />;
+        return <Tickets onNavigate={setActiveView} />;
       case 'videos':
-        return <Videos />;
+        return <Videos onNavigate={setActiveView} />;
       default:
         return <Dashboard />;
     }

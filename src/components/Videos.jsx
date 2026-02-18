@@ -6,8 +6,9 @@ import VideoDetailModal from "./VideoDetailModal";
 import AddVideoModal from "./AddVideoModal";
 import apiClient from "../services/api";
 
-export default function Videos() {
+export default function Videos({ onNavigate }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("Drill");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -45,15 +46,16 @@ export default function Videos() {
     fetchVideos();
   }, []);
 
-  // Filter videos based on search term
-  const filteredVideos = videos.filter(
-    (video) =>
-      video.Title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      video.Description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      video.PracticeType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      video.EssentialCategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      video.Tags?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter videos based on active tab and search term
+  const filteredVideos = videos
+    .filter((video) => video.PracticeType === activeTab)
+    .filter(
+      (video) =>
+        video.Title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        video.Description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        video.EssentialCategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        video.Tags?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
   // Sort videos
   const sortedVideos = [...filteredVideos].sort((a, b) => {
@@ -233,19 +235,21 @@ export default function Videos() {
       <div className="p-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-gray-400 mb-6">
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-            />
-          </svg>
+          <button onClick={() => onNavigate('dashboard')} className="hover:text-white cursor-pointer">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+          </button>
           <span>&gt;</span>
           <span>Videos</span>
         </div>
@@ -255,6 +259,30 @@ export default function Videos() {
 
         {/* Videos Table Container */}
         <div className="bg-[#1E2532] rounded-lg p-6">
+          {/* Tabs */}
+          <div className="flex gap-1 mb-6 border-b border-gray-700">
+            <button
+              onClick={() => { setActiveTab("Drill"); setSortConfig({ key: null, direction: "asc" }); }}
+              className={`px-6 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+                activeTab === "Drill"
+                  ? "text-white border-b-2 border-blue-500"
+                  : "text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              Drill
+            </button>
+            <button
+              onClick={() => { setActiveTab("Essential"); setSortConfig({ key: null, direction: "asc" }); }}
+              className={`px-6 py-2.5 text-sm font-medium transition-colors cursor-pointer ${
+                activeTab === "Essential"
+                  ? "text-white border-b-2 border-blue-500"
+                  : "text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              Essential
+            </button>
+          </div>
+
           {/* Search Bar & Add Button */}
           <div className="mb-6 flex items-center justify-between">
             <div className="relative w-64">
@@ -333,15 +361,6 @@ export default function Videos() {
                     </th>
                     <th
                       className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                      onClick={() => handleSort("PracticeType")}
-                    >
-                      <div className="flex items-center gap-2">
-                        Practice Type
-                        <SortIcon columnKey="PracticeType" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                       onClick={() => handleSort("Level")}
                     >
                       <div className="flex items-center gap-2">
@@ -349,24 +368,28 @@ export default function Videos() {
                         <SortIcon columnKey="Level" />
                       </div>
                     </th>
-                    <th
-                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                      onClick={() => handleSort("EssentialCategory")}
-                    >
-                      <div className="flex items-center gap-2">
-                        Essential Category
-                        <SortIcon columnKey="EssentialCategory" />
-                      </div>
-                    </th>
-                    <th
-                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                      onClick={() => handleSort("EssentialSubcategory")}
-                    >
-                      <div className="flex items-center gap-2">
-                        Essential Subcategory
-                        <SortIcon columnKey="EssentialSubcategory" />
-                      </div>
-                    </th>
+                    {activeTab === "Essential" && (
+                      <>
+                        <th
+                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
+                          onClick={() => handleSort("EssentialCategory")}
+                        >
+                          <div className="flex items-center gap-2">
+                            Category
+                            <SortIcon columnKey="EssentialCategory" />
+                          </div>
+                        </th>
+                        <th
+                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
+                          onClick={() => handleSort("EssentialSubcategory")}
+                        >
+                          <div className="flex items-center gap-2">
+                            Subcategory
+                            <SortIcon columnKey="EssentialSubcategory" />
+                          </div>
+                        </th>
+                      </>
+                    )}
                     <th
                       className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
                       onClick={() => handleSort("Tags")}
@@ -415,14 +438,13 @@ export default function Videos() {
                       >
                         <td className="py-4 px-4 text-gray-200 text-sm">{video.Title}</td>
                         <td className="py-4 px-4 text-gray-200 text-sm max-w-xs truncate">{video.Description && video.Description !== "null" ? video.Description : "N/A"}</td>
-                        <td className="py-4 px-4">
-                          <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            {video.PracticeType}
-                          </span>
-                        </td>
                         <td className="py-4 px-4 text-gray-200 text-sm">{video.Level}</td>
-                        <td className="py-4 px-4 text-gray-200 text-sm">{video.PracticeType === "Essential" ? video.EssentialCategory : "-"}</td>
-                        <td className="py-4 px-4 text-gray-200 text-sm">{video.PracticeType === "Essential" ? video.EssentialSubcategory : "-"}</td>
+                        {activeTab === "Essential" && (
+                          <>
+                            <td className="py-4 px-4 text-gray-200 text-sm">{video.EssentialCategory}</td>
+                            <td className="py-4 px-4 text-gray-200 text-sm">{video.EssentialSubcategory}</td>
+                          </>
+                        )}
                         <td className="py-4 px-4 text-sm">
                           <div className="flex flex-wrap gap-1">
                             {video.Tags?.split(",").map((tag, index) => (
@@ -515,7 +537,7 @@ export default function Videos() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="11" className="py-8 text-center text-gray-400">
+                      <td colSpan={activeTab === "Essential" ? 10 : 8} className="py-8 text-center text-gray-400">
                         No videos found
                       </td>
                     </tr>
