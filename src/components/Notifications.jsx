@@ -183,6 +183,11 @@ export default function Notifications({ onNavigate }) {
   const handlePromoImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToastMsg('error', 'Image size must not exceed 5MB');
+        if (promoFileInputRef.current) promoFileInputRef.current.value = '';
+        return;
+      }
       setPromoImageFile(file);
       setPromoImagePreview(URL.createObjectURL(file));
     }
@@ -213,6 +218,10 @@ export default function Notifications({ onNavigate }) {
 
   // ── Send Promotional ──────────────────────────────────────────────────────
   const handleSendPromotional = async () => {
+    if (!promoLink.trim()) {
+      showToastMsg('error', 'Promotional URL is required');
+      return;
+    }
     try {
       let imageUrl = '';
       if (promoImageFile) {
@@ -606,7 +615,7 @@ export default function Notifications({ onNavigate }) {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <p className="text-gray-400 text-sm">Click to upload image</p>
-                      <p className="text-gray-500 text-xs mt-1">PNG, JPG, JPEG</p>
+                      <p className="text-gray-500 text-xs mt-1">PNG, JPG, JPEG · Max 5MB</p>
                     </div>
                   )}
                   <input
@@ -621,7 +630,7 @@ export default function Notifications({ onNavigate }) {
 
               {/* Promotional Link */}
               <div className="mb-6">
-                <label className="block text-gray-300 text-sm mb-2">Promotional Link</label>
+                <label className="block text-gray-300 text-sm mb-2">Promotional Link <span className="text-red-400">*</span></label>
                 <input
                   type="text"
                   value={promoLink}
