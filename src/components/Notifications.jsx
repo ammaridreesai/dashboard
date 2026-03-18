@@ -17,63 +17,71 @@ export default function Notifications({ onNavigate }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [users, setUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersTotalPages, setUsersTotalPages] = useState(1);
+  const [usersTotalCount, setUsersTotalCount] = useState(0);
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [appliedDateRange, setAppliedDateRange] = useState([null, null]);
+
+  // ── General fields ─────────────────────────────────────────────────────────
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success'); // 'success' or 'error'
 
-  // Fetch users from API when "Select Users" is selected
+  const showToastMsg = (type, msg) => {
+    setToastType(type);
+    setToastMessage(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  // ── Fetch users when "Select Users" is chosen (server-side filtering) ───────
   useEffect(() => {
-    const fetchUsers = async () => {
-      if (userFilter === 'select' && users.length === 0) {
-        setIsLoadingUsers(true);
-        try {
-          const response = await apiClient.get('/users/dashboard/all-users');
-          if (response.data.isRequestSuccessful) {
-            setUsers(response.data.successResponse);
-          }
-        } catch (error) {
-          console.error('Error fetching users:', error);
-        } finally {
-          setIsLoadingUsers(false);
-        }
-      }
+    if (userFilter !== 'select') return;
+    const [appliedStart, appliedEnd] = appliedDateRange;
+    const formatDate = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
     };
 
-    fetchUsers();
-  }, [userFilter, users.length]);
+    const params = new URLSearchParams({ page: usersPage, limit: 50 });
+    if (appliedSearch.trim()) params.append('search', appliedSearch.trim());
+    if (appliedStart) params.append('dateFrom', formatDate(appliedStart));
+    if (appliedStart) params.append('dateTo', formatDate(appliedEnd ?? appliedStart));
 
-  // Filter users based on search term and joining date
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase());
-
-    let matchesDate = true;
-    if (startDate || endDate) {
-      if (!user.createdAt) {
-        matchesDate = false;
-      } else {
-        const createdDate = new Date(user.createdAt);
-        if (startDate && startDate > createdDate) {
-          matchesDate = false;
+    setIsLoadingUsers(true);
+    apiClient
+      .get(`/users/dashboard/all-users?${params.toString()}`)
+      .then((response) => {
+        if (response.data.isRequestSuccessful) {
+          const res = response.data.successResponse;
+          setUsers(res.data ?? []);
+          const total = res.total ?? 0;
+          setUsersTotalCount(total);
+          setUsersTotalPages(Math.ceil(total / 50) || 1);
         }
-        if (endDate) {
-          const toDate = new Date(endDate);
-          toDate.setHours(23, 59, 59, 999);
-          if (toDate < createdDate) {
-            matchesDate = false;
-          }
-        }
-      }
-    }
+      })
+      .catch((error) => console.error('Error fetching users:', error))
+      .finally(() => setIsLoadingUsers(false));
+  }, [userFilter, usersPage, appliedSearch, appliedDateRange]);
 
-    return matchesSearch && matchesDate;
-  });
+  // ── Reset to page 1 when applied filters change ───────────────────────────
+  useEffect(() => {
+    setUsersPage(1);
+  }, [userFilter, appliedSearch, appliedDateRange]);
 
-  // Sort users
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
+  const handleApplyFilters = () => {
+    setAppliedSearch(searchTerm);
+    setAppliedDateRange(dateRange);
+  };
+
+  // ── Sort only (filtering is server-side) ──────────────────────────────────
+  const sortedUsers = [...users].sort((a, b) => {
     if (!sortConfig.key) return 0;
 
     const aValue = a[sortConfig.key];
@@ -118,7 +126,14 @@ export default function Notifications({ onNavigate }) {
   // Remove selected user chip
   const removeSelectedUser = (userId) => {
     setSelectedUsers((prev) => prev.filter((u) => getUserId(u) !== userId));
-  };
+
+  // ── Build userIds from current filter (shared by both send handlers) ───────
+  const buildUserIds = async () => {
+    const fetchAll = async () => {
+      if (users.length > 0) return users;
+      const r = await apiClient.get('/users/dashboard/all-users?page=1&limit=50');
+      return r.data.isRequestSuccessful ? (r.data.successResponse?.data ?? []) : [];
+    };
 
   // Handle send notification
   const handleSendNotification = async () => {
@@ -431,208 +446,246 @@ export default function Notifications({ onNavigate }) {
             </div>
           </div>
 
-          {/* Users Grid - Only show when "Select Users" is selected */}
-          {userFilter === 'select' && (
-            <>
-              {/* Search Bar and Joining Date Filter */}
-              <div className="flex items-end gap-6 mb-6">
-                <div className="relative w-64">
-                  <label className="block text-gray-300 text-sm mb-1">Search</label>
-                  <div className="relative">
-                    <svg
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
+  const UserTable = () =>
+    userFilter === 'select' ? (
+      <>
+        <div className="flex items-end gap-3 mb-6">
+          <div className="relative w-64">
+            <label className="block text-gray-300 text-sm mb-1">Search</label>
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
+                className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-gray-300 text-sm mb-1">Joining Date</label>
+            <DatePicker
+              selectsRange
+              startDate={startDate}
+              endDate={endDate}
+              onChange={(update) => setDateRange(update)}
+              isClearable
+              placeholderText="Select date range"
+              dateFormat="MMM dd, yyyy"
+              className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
+            />
+          </div>
+          <button
+            onClick={handleApplyFilters}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+          >
+            Apply
+          </button>
+        </div>
+
+        <div className="overflow-auto mb-4">
+          {isLoadingUsers ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            </div>
+          ) : (
+            <table className="w-full">
+              <thead className="sticky top-0 bg-[#1E2532] z-10">
+                <tr className="border-b border-gray-700">
+                  <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
                     <input
-                      type="text"
-                      placeholder="Search"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                      type="checkbox"
+                      className="w-4 h-4 accent-blue-500"
+                      onChange={(e) =>
+                        e.target.checked ? setSelectedUsers(sortedUsers) : setSelectedUsers([])
+                      }
+                      checked={selectedUsers.length === sortedUsers.length && sortedUsers.length > 0}
                     />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-gray-300 text-sm mb-1">Joining Date</label>
-                  <DatePicker
-                    selectsRange
-                    startDate={startDate}
-                    endDate={endDate}
-                    onChange={(update) => setDateRange(update)}
-                    isClearable
-                    placeholderText="Select date range"
-                    dateFormat="MMM dd, yyyy"
-                    className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
-                  />
-                </div>
+                  </th>
+                  {tableColumns.map(([key, label]) => (
+                    <th
+                      key={key}
+                      className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
+                      onClick={() => handleSort(key)}
+                    >
+                      <div className="flex items-center gap-2">
+                        {label}
+                        <SortIcon columnKey={key} />
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sortedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="py-8 text-center text-gray-400">No users found</td>
+                  </tr>
+                ) : (
+                  sortedUsers.map((user, index) => (
+                    <tr
+                      key={user.id || user.userId || `u-${index}`}
+                      className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
+                    >
+                      <td className="py-4 px-4">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 accent-blue-500"
+                          checked={selectedUsers.some((u) => getUserId(u) === getUserId(user))}
+                          onChange={() => handleUserToggle(user)}
+                        />
+                      </td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">{user.name}</td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">{user.email}</td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">{user.role}</td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">{user.signupMethod}</td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">{user.createdAt}</td>
+                      <td className="py-4 px-4">
+                        <span className={`${getStatusColor(user.status)} text-white px-3 py-1 rounded-full text-sm font-medium`}>
+                          {user.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-gray-200 text-sm">{user.plan}</td>
+                      <td className="py-4 px-4">
+                        <span className={`${user.isProfileCompleted ? 'bg-green-500' : 'bg-red-500'} text-white px-3 py-1 rounded-full text-sm font-medium`}>
+                          {user.isProfileCompleted ? 'Yes' : 'No'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Pagination */}
+        {!isLoadingUsers && usersTotalPages > 1 && (
+          <div className="mt-2 mb-6 flex items-center justify-between">
+            <p className="text-gray-400 text-sm">
+              Showing{' '}
+              <span className="text-white font-medium">
+                {(usersPage - 1) * 50 + 1}–{Math.min(usersPage * 50, usersTotalCount)}
+              </span>{' '}
+              of <span className="text-white font-medium">{usersTotalCount}</span> users
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                disabled={usersPage === 1}
+                className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                ‹ Prev
+              </button>
+              {Array.from({ length: usersTotalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === usersTotalPages || (p >= usersPage - 2 && p <= usersPage + 2))
+                .reduce((acc, p, idx, arr) => {
+                  if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === '...' ? (
+                    <span key={`e-${idx}`} className="px-2 text-gray-500">…</span>
+                  ) : (
+                    <button
+                      key={item}
+                      onClick={() => setUsersPage(item)}
+                      className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                        usersPage === item ? 'bg-blue-600 text-white font-medium' : 'text-gray-300 hover:bg-[#2C3947]'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+              <button
+                onClick={() => setUsersPage((p) => Math.min(usersTotalPages, p + 1))}
+                disabled={usersPage === usersTotalPages}
+                className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next ›
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    ) : null;
+
+  // ── JSX ───────────────────────────────────────────────────────────────────
+  return (
+    <div className="flex-1 ml-48 bg-[#2C3947] min-h-screen">
+      <Header />
+
+      <div className="p-8">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-gray-400 mb-6">
+          <button onClick={() => onNavigate('dashboard')} className="hover:text-white cursor-pointer">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </button>
+          <span>&gt;</span>
+          <span>Notifications</span>
+        </div>
+
+        <h1 className="text-3xl font-semibold text-white mb-8">Notifications</h1>
+
+        <div className="bg-[#1E2532] rounded-lg p-6">
+          {/* Tabs */}
+          <div className="flex border-b border-gray-700 mb-6">
+            <button
+              onClick={() => setActiveTab('general')}
+              className={`px-6 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'general' ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              General
+            </button>
+            <button
+              onClick={() => setActiveTab('promotional')}
+              className={`px-6 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'promotional' ? 'text-white border-b-2 border-blue-500' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Promotional
+            </button>
+          </div>
+
+          {/* ── GENERAL TAB ──────────────────────────────────────────────── */}
+          {activeTab === 'general' && (
+            <>
+              <UserFilterRadios />
+              <SelectedChips />
+
+              <div className="mb-4">
+                <label className="block text-gray-300 text-sm mb-2">Notification Title</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter title"
+                  className="w-full px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
 
-              {/* Users Table */}
-              <div className="h-96 overflow-auto mb-6">
-                {isLoadingUsers ? (
-                  <div className="flex justify-center items-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-                  </div>
-                ) : (
-                  <table className="w-full">
-                    <thead className="sticky top-0 bg-[#1E2532] z-10">
-                      <tr className="border-b border-gray-700">
-                        <th className="text-left py-3 px-4 text-gray-300 text-sm font-medium whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4 accent-blue-500"
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedUsers(sortedUsers);
-                              } else {
-                                setSelectedUsers([]);
-                              }
-                            }}
-                            checked={
-                              selectedUsers.length === sortedUsers.length &&
-                              sortedUsers.length > 0
-                            }
-                          />
-                        </th>
-                        <th
-                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                          onClick={() => handleSort('name')}
-                        >
-                          <div className="flex items-center gap-2">
-                            Name
-                            <SortIcon columnKey="name" />
-                          </div>
-                        </th>
-                        <th
-                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                          onClick={() => handleSort('email')}
-                        >
-                          <div className="flex items-center gap-2">
-                            Email
-                            <SortIcon columnKey="email" />
-                          </div>
-                        </th>
-                        <th
-                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                          onClick={() => handleSort('role')}
-                        >
-                          <div className="flex items-center gap-2">
-                            Role
-                            <SortIcon columnKey="role" />
-                          </div>
-                        </th>
-                        <th
-                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                          onClick={() => handleSort('signupMethod')}
-                        >
-                          <div className="flex items-center gap-2">
-                            Signup Method
-                            <SortIcon columnKey="signupMethod" />
-                          </div>
-                        </th>
-                        <th
-                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                          onClick={() => handleSort('createdAt')}
-                        >
-                          <div className="flex items-center gap-2">
-                            Created At
-                            <SortIcon columnKey="createdAt" />
-                          </div>
-                        </th>
-                        <th
-                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                          onClick={() => handleSort('status')}
-                        >
-                          <div className="flex items-center gap-2">
-                            Status
-                            <SortIcon columnKey="status" />
-                          </div>
-                        </th>
-                        <th
-                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                          onClick={() => handleSort('plan')}
-                        >
-                          <div className="flex items-center gap-2">
-                            Plan
-                            <SortIcon columnKey="plan" />
-                          </div>
-                        </th>
-                        <th
-                          className="text-left py-3 px-4 text-gray-300 text-sm font-medium cursor-pointer hover:text-white whitespace-nowrap"
-                          onClick={() => handleSort('isProfileCompleted')}
-                        >
-                          <div className="flex items-center gap-2">
-                            Profile Completed
-                            <SortIcon columnKey="isProfileCompleted" />
-                          </div>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedUsers.length === 0 ? (
-                        <tr>
-                          <td colSpan="9" className="py-8 text-center text-gray-400">
-                            No users found
-                          </td>
-                        </tr>
-                      ) : (
-                        sortedUsers.map((user, index) => (
-                          <tr
-                            key={user.id || user.userId || `user-${index}`}
-                            className="border-b border-gray-700 hover:bg-[#2A3441] transition-colors"
-                          >
-                            <td className="py-4 px-4">
-                              <input
-                                type="checkbox"
-                                className="w-4 h-4 accent-blue-500"
-                                checked={selectedUsers.some((u) => getUserId(u) === getUserId(user))}
-                                onChange={() => handleUserToggle(user)}
-                              />
-                            </td>
-                            <td className="py-4 px-4 text-gray-200 text-sm">{user.name}</td>
-                            <td className="py-4 px-4 text-gray-200 text-sm">{user.email}</td>
-                            <td className="py-4 px-4 text-gray-200 text-sm">{user.role}</td>
-                            <td className="py-4 px-4 text-gray-200 text-sm">
-                              {user.signupMethod}
-                            </td>
-                            <td className="py-4 px-4 text-gray-200 text-sm">
-                              {user.createdAt}
-                            </td>
-                            <td className="py-4 px-4">
-                              <span
-                                className={`${getStatusColor(
-                                  user.status
-                                )} text-white px-3 py-1 rounded-full text-sm font-medium`}
-                              >
-                                {user.status}
-                              </span>
-                            </td>
-                            <td className="py-4 px-4 text-gray-200 text-sm">{user.plan}</td>
-                            <td className="py-4 px-4">
-                              <span
-                                className={`${user.isProfileCompleted ? 'bg-green-500' : 'bg-red-500'} text-white px-3 py-1 rounded-full text-sm font-medium`}
-                              >
-                                {user.isProfileCompleted ? 'Yes' : 'No'}
-                              </span>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                )}
+              <div className="mb-6">
+                <label className="block text-gray-300 text-sm mb-2">Notification Message</label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="write here"
+                  className="w-full px-4 py-3 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  rows={4}
+                />
+                <div className="text-gray-400 text-sm mt-1">{message.length}/1000 characters</div>
               </div>
-            </>
-          )}
+
+              <UserTable />
 
           {/* Send Notification Button */}
           <div className="flex justify-end">

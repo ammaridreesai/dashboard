@@ -6,8 +6,12 @@ import apiClient from "../services/api";
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [sortField, setSortField] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersTotalPages, setUsersTotalPages] = useState(1);
+  const [usersTotalCount, setUsersTotalCount] = useState(0);
   const [statsCards, setStatsCards] = useState([
     { title: "Total Users", value: "0", bgColor: "bg-[#1E2532]" },
     { title: "Active Users", value: "0", bgColor: "bg-[#1E2532]" },
@@ -66,11 +70,6 @@ export default function Dashboard() {
         }
         setIsLoadingSubscriptions(false);
 
-        // Fetch all users
-        const allUsersResponse = await apiClient.get("/users/dashboard/all-users");
-        if (allUsersResponse.data.isRequestSuccessful) {
-          setUsersData(allUsersResponse.data.successResponse);
-        }
         setIsLoadingUsers(false);
 
         // Fetch ticket analytics
@@ -93,31 +92,50 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
-  // Filter and sort users
-  const filteredAndSortedUsers = usersData
-    .filter((user) => {
-      const query = searchQuery.toLowerCase();
-      return (
-        user.name.toLowerCase().includes(query) ||
-        user.email.toLowerCase().includes(query) ||
-        user.role.toLowerCase().includes(query) ||
-        user.signupMethod.toLowerCase().includes(query) ||
-        user.status.toLowerCase().includes(query) ||
-        user.plan.toLowerCase().includes(query)
-      );
-    })
-    .sort((a, b) => {
-      if (!sortField) return 0;
-
-      const aValue = a[sortField].toString().toLowerCase();
-      const bValue = b[sortField].toString().toLowerCase();
-
-      if (sortDirection === "asc") {
-        return aValue > bValue ? 1 : -1;
-      } else {
-        return aValue < bValue ? 1 : -1;
+  // Fetch users separately (server-side search + pagination)
+  useEffect(() => {
+    const fetchUsers = async () => {
+      setIsLoadingUsers(true);
+      try {
+        const params = new URLSearchParams({ page: usersPage, limit: 50 });
+        if (appliedSearch.trim()) params.append("search", appliedSearch.trim());
+        const res = await apiClient.get(`/users/dashboard/all-users?${params.toString()}`);
+        if (res.data.isRequestSuccessful) {
+          const r = res.data.successResponse;
+          setUsersData(Array.isArray(r) ? r : (r.data ?? []));
+          const total = r.total ?? 0;
+          setUsersTotalCount(total);
+          setUsersTotalPages(Math.ceil(total / 50) || 1);
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setIsLoadingUsers(false);
       }
-    });
+    };
+    fetchUsers();
+  }, [usersPage, appliedSearch]);
+
+  // Reset to page 1 when search is applied
+  useEffect(() => {
+    setUsersPage(1);
+  }, [appliedSearch]);
+
+  const handleSearch = () => setAppliedSearch(searchQuery);
+
+  // Sort users (filtering is server-side)
+  const filteredAndSortedUsers = [...usersData].sort((a, b) => {
+    if (!sortField) return 0;
+
+    const aValue = a[sortField].toString().toLowerCase();
+    const bValue = b[sortField].toString().toLowerCase();
+
+    if (sortDirection === "asc") {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
+  });
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -390,27 +408,36 @@ export default function Dashboard() {
         {/* Users Table */}
         <div className="bg-[#1E2532] rounded-xl p-6">
           <div className="mb-4">
-            <div className="relative max-w-md">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            <div className="flex items-center gap-2">
+              <div className="relative max-w-md flex-1">
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="w-full pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              </div>
+              <button
+                onClick={handleSearch}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+              >
+                Search
+              </button>
             </div>
           </div>
 
@@ -541,6 +568,59 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {!isLoadingUsers && usersTotalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between">
+              <p className="text-gray-400 text-sm">
+                Showing{" "}
+                <span className="text-white font-medium">
+                  {(usersPage - 1) * 50 + 1}–{Math.min(usersPage * 50, usersTotalCount)}
+                </span>{" "}
+                of <span className="text-white font-medium">{usersTotalCount}</span> users
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                  disabled={usersPage === 1}
+                  className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  ‹ Prev
+                </button>
+                {Array.from({ length: usersTotalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === usersTotalPages || (p >= usersPage - 2 && p <= usersPage + 2))
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((item, idx) =>
+                    item === "..." ? (
+                      <span key={`e-${idx}`} className="px-2 text-gray-500">…</span>
+                    ) : (
+                      <button
+                        key={item}
+                        onClick={() => setUsersPage(item)}
+                        className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                          usersPage === item
+                            ? "bg-blue-600 text-white font-medium"
+                            : "text-gray-300 hover:bg-[#2C3947]"
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+                <button
+                  onClick={() => setUsersPage((p) => Math.min(usersTotalPages, p + 1))}
+                  disabled={usersPage === usersTotalPages}
+                  className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next ›
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>

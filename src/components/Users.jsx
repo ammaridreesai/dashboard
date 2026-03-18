@@ -6,21 +6,42 @@ import Header from "./Header";
 import apiClient from "../services/api";
 import * as XLSX from "xlsx";
 
+const LIMIT = 50;
+
 export default function Users({ onNavigate }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
 
   useEffect(() => {
     const fetchUsers = async () => {
+      setIsLoading(true);
       try {
-        const response = await apiClient.get("/users/dashboard/all-users");
+        const params = new URLSearchParams({ page: currentPage, limit: LIMIT });
+        if (appliedSearch.trim()) params.append("search", appliedSearch.trim());
+        const response = await apiClient.get(
+          `/users/dashboard/all-users?${params.toString()}`
+        );
         if (response.data.isRequestSuccessful) {
-          setUsers(response.data.successResponse);
+          const res = response.data.successResponse;
+          // Handle paginated response shape: { users, totalUsers, totalPages }
+          if (res && typeof res === "object" && !Array.isArray(res)) {
+            const total = res.total ?? res.totalUsers ?? 0;
+            setUsers(res.data ?? res.users ?? []);
+            setTotalUsers(total);
+            setTotalPages(Math.ceil(total / LIMIT) || 1);
+          } else {
+            // Fallback if server returns plain array
+            setUsers(Array.isArray(res) ? res : []);
+          }
         }
       } catch (error) {
         console.error("Error fetching users:", error);
@@ -30,7 +51,16 @@ export default function Users({ onNavigate }) {
     };
 
     fetchUsers();
-  }, []);
+  }, [currentPage, appliedSearch]);
+
+  // Reset to page 1 when applied search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [appliedSearch]);
+
+  const handleSearch = () => {
+    setAppliedSearch(searchTerm);
+  };
 
   const handleViewUser = (user) => {
     setSelectedUser(user);
@@ -42,16 +72,8 @@ export default function Users({ onNavigate }) {
     setSelectedUser(null);
   };
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // Sort users
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
+  // Sort users (filtering is server-side)
+  const sortedUsers = [...users].sort((a, b) => {
     if (!sortConfig.key) return 0;
 
     let aValue = a[sortConfig.key];
@@ -214,27 +236,36 @@ export default function Users({ onNavigate }) {
         <div className="bg-[#1E2532] rounded-lg p-6">
           {/* Search Bar and Export Button */}
           <div className="mb-6 flex items-center justify-between">
-            <div className="relative w-64">
-              <svg
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            <div className="flex items-center gap-2">
+              <div className="relative w-64">
+                <svg
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                 />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-              />
+              </div>
+              <button
+                onClick={handleSearch}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+              >
+                Search
+              </button>
             </div>
 
             <button
@@ -287,7 +318,7 @@ export default function Users({ onNavigate }) {
           </div>
 
           {/* Table */}
-          <div className="h-96 overflow-auto">
+          <div className="overflow-auto">
             <table className="w-full">
               <thead className="sticky top-0 bg-[#1E2532] z-10">
                 <tr className="border-b border-gray-700">
@@ -443,6 +474,75 @@ export default function Users({ onNavigate }) {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {!isLoading && totalPages > 1 && (
+            <div className="mt-6 flex items-center justify-between">
+              <p className="text-gray-400 text-sm">
+                Showing{" "}
+                <span className="text-white font-medium">
+                  {(currentPage - 1) * LIMIT + 1}–
+                  {Math.min(currentPage * LIMIT, totalUsers)}
+                </span>{" "}
+                of <span className="text-white font-medium">{totalUsers}</span> users
+              </p>
+
+              <div className="flex items-center gap-1">
+                {/* Previous */}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  ‹ Prev
+                </button>
+
+                {/* Page numbers */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(
+                    (p) =>
+                      p === 1 ||
+                      p === totalPages ||
+                      (p >= currentPage - 2 && p <= currentPage + 2)
+                  )
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) {
+                      acc.push("...");
+                    }
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((item, idx) =>
+                    item === "..." ? (
+                      <span key={`ellipsis-${idx}`} className="px-2 text-gray-500">
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        onClick={() => setCurrentPage(item)}
+                        className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                          currentPage === item
+                            ? "bg-blue-600 text-white font-medium"
+                            : "text-gray-300 hover:bg-[#2C3947]"
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    )
+                  )}
+
+                {/* Next */}
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next ›
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

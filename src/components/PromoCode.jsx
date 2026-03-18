@@ -20,6 +20,11 @@ export default function PromoCode({ onNavigate }) {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersTotalPages, setUsersTotalPages] = useState(1);
+  const [usersTotalCount, setUsersTotalCount] = useState(0);
+  const [usersSearchTerm, setUsersSearchTerm] = useState("");
+  const [appliedUsersSearch, setAppliedUsersSearch] = useState("");
   const [isLoadingAssigned, setIsLoadingAssigned] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -47,23 +52,39 @@ export default function PromoCode({ onNavigate }) {
   // Fetch users from API when switching to assign tab
   useEffect(() => {
     const fetchUsers = async () => {
-      if (activeTab === "assign" && users.length === 0) {
-        setIsLoadingUsers(true);
-        try {
-          const response = await apiClient.get("/users/dashboard/all-users");
-          if (response.data.isRequestSuccessful) {
-            setUsers(response.data.successResponse);
-          }
-        } catch (error) {
-          console.error("Error fetching users:", error);
-        } finally {
-          setIsLoadingUsers(false);
+      if (activeTab !== "assign") return;
+      setIsLoadingUsers(true);
+      try {
+        const params = new URLSearchParams({ page: usersPage, limit: 50 });
+        if (appliedUsersSearch.trim()) params.append("search", appliedUsersSearch.trim());
+        const response = await apiClient.get(
+          `/users/dashboard/all-users?${params.toString()}`
+        );
+        if (response.data.isRequestSuccessful) {
+          const res = response.data.successResponse;
+          setUsers(res.data ?? []);
+          const total = res.total ?? 0;
+          setUsersTotalCount(total);
+          setUsersTotalPages(Math.ceil(total / 50) || 1);
         }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      } finally {
+        setIsLoadingUsers(false);
       }
     };
 
     fetchUsers();
-  }, [activeTab, users.length]);
+  }, [activeTab, usersPage, appliedUsersSearch]);
+
+  // Reset users page when tab or applied search changes
+  useEffect(() => {
+    setUsersPage(1);
+  }, [activeTab, appliedUsersSearch]);
+
+  const handleUsersSearch = () => {
+    setAppliedUsersSearch(usersSearchTerm);
+  };
 
   // Fetch assigned promos from API when switching to assigned tab
   useEffect(() => {
@@ -93,13 +114,8 @@ export default function PromoCode({ onNavigate }) {
       promo.promoType.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.role && user.role.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Users filtering is server-side; just use users directly
+  const filteredUsers = users;
 
   // Filter assigned promos based on search term
   const filteredAssignedPromos = assignedPromos.filter(
@@ -310,9 +326,12 @@ export default function PromoCode({ onNavigate }) {
           setPromoCodes(response.data.successResponse);
         }
         // Refresh users list to update promo status
-        const usersResponse = await apiClient.get("/users/dashboard/all-users");
+        const usersResponse = await apiClient.get(
+          `/users/dashboard/all-users?page=${usersPage}&limit=50`
+        );
         if (usersResponse.data.isRequestSuccessful) {
-          setUsers(usersResponse.data.successResponse);
+          const res = usersResponse.data.successResponse;
+          setUsers(res.data ?? []);
         }
         // Refresh assigned promos list
         const assignedResponse = await apiClient.get(
@@ -622,32 +641,41 @@ export default function PromoCode({ onNavigate }) {
           <div className="bg-[#1E2532] rounded-lg p-6">
             {/* Search Bar */}
             <div className="mb-6">
-              <div className="relative w-64">
-                <svg
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              <div className="flex items-center gap-2">
+                <div className="relative w-64">
+                  <svg
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Search users"
+                    value={usersSearchTerm}
+                    onChange={(e) => setUsersSearchTerm(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleUsersSearch()}
+                    className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                   />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search users"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                />
+                </div>
+                <button
+                  onClick={handleUsersSearch}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+                >
+                  Search
+                </button>
               </div>
             </div>
 
             {/* Users Table */}
-            <div className="h-96 overflow-auto">
+            <div className="overflow-auto">
               <table className="w-full">
                 <thead className="sticky top-0 bg-[#1E2532] z-10">
                   <tr className="border-b border-gray-700">
@@ -743,6 +771,59 @@ export default function PromoCode({ onNavigate }) {
                 </tbody>
               </table>
             </div>
+
+            {/* Users Pagination */}
+            {!isLoadingUsers && usersTotalPages > 1 && (
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-gray-400 text-sm">
+                  Showing{" "}
+                  <span className="text-white font-medium">
+                    {(usersPage - 1) * 50 + 1}–{Math.min(usersPage * 50, usersTotalCount)}
+                  </span>{" "}
+                  of <span className="text-white font-medium">{usersTotalCount}</span> users
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                    disabled={usersPage === 1}
+                    className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ‹ Prev
+                  </button>
+                  {Array.from({ length: usersTotalPages }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === usersTotalPages || (p >= usersPage - 2 && p <= usersPage + 2))
+                    .reduce((acc, p, idx, arr) => {
+                      if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
+                      acc.push(p);
+                      return acc;
+                    }, [])
+                    .map((item, idx) =>
+                      item === "..." ? (
+                        <span key={`e-${idx}`} className="px-2 text-gray-500">…</span>
+                      ) : (
+                        <button
+                          key={item}
+                          onClick={() => setUsersPage(item)}
+                          className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                            usersPage === item
+                              ? "bg-blue-600 text-white font-medium"
+                              : "text-gray-300 hover:bg-[#2C3947]"
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      )
+                    )}
+                  <button
+                    onClick={() => setUsersPage((p) => Math.min(usersTotalPages, p + 1))}
+                    disabled={usersPage === usersTotalPages}
+                    className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next ›
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
