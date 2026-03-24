@@ -6,23 +6,14 @@ import apiClient from '../services/api';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-const tableColumns = [
-  ['name', 'Name'],
-  ['email', 'Email'],
-  ['role', 'Role'],
-  ['signupMethod', 'Signup Method'],
-  ['createdAt', 'Joining Date'],
-  ['status', 'Status'],
-  ['plan', 'Plan'],
-  ['isProfileCompleted', 'Profile Completed'],
-];
+const USERS_LIMIT = 50;
 
 export default function Notifications({ onNavigate }) {
   // ── Tab ───────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('general');
 
   // ── Shared user filter state (used by both tabs) ───────────────────────────
-  const [userFilter, setUserFilter] = useState('all');
+  const [userFilter, setUserFilter] = useState('select');
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
@@ -30,6 +21,9 @@ export default function Notifications({ onNavigate }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [users, setUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [usersPage, setUsersPage] = useState(1);
+  const [usersTotalPages, setUsersTotalPages] = useState(1);
+  const [usersTotalCount, setUsersTotalCount] = useState(0);
 
   // ── General fields ─────────────────────────────────────────────────────────
   const [title, setTitle] = useState('');
@@ -59,19 +53,28 @@ export default function Notifications({ onNavigate }) {
 
   // ── Fetch users when "Select Users" is chosen ──────────────────────────────
   useEffect(() => {
-    if (userFilter === 'select' && users.length === 0) {
-      setIsLoadingUsers(true);
-      apiClient
-        .get('/users/dashboard/all-users')
-        .then((response) => {
-          if (response.data.isRequestSuccessful) {
-            setUsers(response.data.successResponse);
-          }
-        })
-        .catch((error) => console.error('Error fetching users:', error))
-        .finally(() => setIsLoadingUsers(false));
-    }
-  }, [userFilter, users.length]);
+    if (userFilter !== 'select') return;
+    setIsLoadingUsers(true);
+    apiClient
+      .get(`/users/dashboard/all-users?page=${usersPage}&limit=${USERS_LIMIT}`)
+      .then((response) => {
+        if (response.data.isRequestSuccessful) {
+          const res = response.data.successResponse;
+          const data = Array.isArray(res) ? res : (res.data ?? []);
+          const total = res.total ?? data.length;
+          setUsers(data);
+          setUsersTotalCount(total);
+          setUsersTotalPages(Math.ceil(total / USERS_LIMIT) || 1);
+        }
+      })
+      .catch((error) => console.error('Error fetching users:', error))
+      .finally(() => setIsLoadingUsers(false));
+  }, [userFilter, usersPage]);
+
+  // Reset page when switching to select filter
+  useEffect(() => {
+    if (userFilter === 'select') setUsersPage(1);
+  }, [userFilter]);
 
   // ── Filtering / sorting ────────────────────────────────────────────────────
   const filteredUsers = users.filter((user) => {
@@ -124,26 +127,47 @@ export default function Notifications({ onNavigate }) {
   const removeSelectedUser = (userId) =>
     setSelectedUsers((prev) => prev.filter((u) => getUserId(u) !== userId));
 
+  // ── Fetch ALL users across all pages ──────────────────────────────────────
+  const fetchAllUsers = async () => {
+    const first = await apiClient.get(`/users/dashboard/all-users?page=1&limit=${USERS_LIMIT}`);
+    if (!first.data.isRequestSuccessful) return [];
+    const res = first.data.successResponse;
+    const firstData = Array.isArray(res) ? res : (res.data ?? []);
+    const total = res.total ?? firstData.length;
+    const totalPgs = Math.ceil(total / USERS_LIMIT) || 1;
+    if (totalPgs <= 1) return firstData;
+
+    const requests = [];
+    for (let p = 2; p <= totalPgs; p++) {
+      requests.push(apiClient.get(`/users/dashboard/all-users?page=${p}&limit=${USERS_LIMIT}`));
+    }
+    const results = await Promise.all(requests);
+    let allData = [...firstData];
+    for (const r of results) {
+      if (r.data.isRequestSuccessful) {
+        const d = r.data.successResponse;
+        allData = allData.concat(Array.isArray(d) ? d : (d.data ?? []));
+      }
+    }
+    return allData;
+  };
+
   // ── Build userIds from current filter (shared by both send handlers) ───────
   const buildUserIds = async () => {
-    const fetchAll = async () => {
-      if (users.length > 0) return users;
-      const r = await apiClient.get('/users/dashboard/all-users');
-      return r.data.isRequestSuccessful ? r.data.successResponse : [];
-    };
-
+    if (userFilter === 'select') {
+      return selectedUsers.map((u) => getUserId(u));
+    }
+    const allUsers = await fetchAllUsers();
     if (userFilter === 'all') {
-      return (await fetchAll()).map((u) => getUserId(u));
+      return allUsers.map((u) => getUserId(u));
     } else if (userFilter === 'paid') {
-      return (await fetchAll())
+      return allUsers
         .filter((u) => u.plan && u.plan.toLowerCase() !== 'free' && u.plan.toLowerCase() !== 'none')
         .map((u) => getUserId(u));
     } else if (userFilter === 'unpaid') {
-      return (await fetchAll())
+      return allUsers
         .filter((u) => !u.plan || u.plan.toLowerCase() === 'free' || u.plan.toLowerCase() === 'none')
         .map((u) => getUserId(u));
-    } else if (userFilter === 'select') {
-      return selectedUsers.map((u) => getUserId(u));
     }
     return [];
   };
@@ -406,7 +430,7 @@ export default function Notifications({ onNavigate }) {
           </div>
         </div>
 
-        <div className="h-96 overflow-auto mb-6">
+        <div className="h-96 overflow-auto mb-4">
           {isLoadingUsers ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
@@ -481,6 +505,57 @@ export default function Notifications({ onNavigate }) {
             </table>
           )}
         </div>
+
+        {/* Pagination */}
+        {!isLoadingUsers && usersTotalPages > 1 && (
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-gray-400 text-sm">
+              Showing{' '}
+              <span className="text-white font-medium">
+                {(usersPage - 1) * USERS_LIMIT + 1}–{Math.min(usersPage * USERS_LIMIT, usersTotalCount)}
+              </span>{' '}
+              of <span className="text-white font-medium">{usersTotalCount}</span> users
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
+                disabled={usersPage === 1}
+                className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                ‹ Prev
+              </button>
+              {Array.from({ length: usersTotalPages }, (_, i) => i + 1)
+                .filter((p) => p === 1 || p === usersTotalPages || (p >= usersPage - 2 && p <= usersPage + 2))
+                .reduce((acc, p, idx, arr) => {
+                  if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === '...' ? (
+                    <span key={`ellipsis-${idx}`} className="px-2 text-gray-500">…</span>
+                  ) : (
+                    <button
+                      key={item}
+                      onClick={() => setUsersPage(item)}
+                      className={`px-3 py-1.5 rounded text-sm transition-colors ${
+                        usersPage === item ? 'bg-blue-600 text-white font-medium' : 'text-gray-300 hover:bg-[#2C3947]'
+                      }`}
+                    >
+                      {item}
+                    </button>
+                  )
+                )}
+              <button
+                onClick={() => setUsersPage((p) => Math.min(usersTotalPages, p + 1))}
+                disabled={usersPage === usersTotalPages}
+                className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next ›
+              </button>
+            </div>
+          </div>
+        )}
       </>
     ) : null;
 
