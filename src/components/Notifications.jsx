@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from './Header';
 import apiClient from '../services/api';
 import DatePicker from 'react-datepicker';
@@ -18,23 +18,34 @@ const tableColumns = [
 ];
 
 export default function Notifications({ onNavigate }) {
+  // ── Tab ───────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('general');
+
+  // ── Shared user filter state (used by both tabs) ───────────────────────────
   const [userFilter, setUserFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [users, setUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
-  const [usersPage, setUsersPage] = useState(1);
-  const [usersTotalPages, setUsersTotalPages] = useState(1);
-  const [usersTotalCount, setUsersTotalCount] = useState(0);
-  const [appliedSearch, setAppliedSearch] = useState('');
-  const [appliedDateRange, setAppliedDateRange] = useState([null, null]);
+
+  // ── General fields ─────────────────────────────────────────────────────────
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+
+  // ── Promotional fields ─────────────────────────────────────────────────────
+  const [promoTitle, setPromoTitle] = useState('');
+  const [promoBody, setPromoBody] = useState('');
+  const [promoLink, setPromoLink] = useState('');
+  const [promoImageFile, setPromoImageFile] = useState(null);
+  const [promoImagePreview, setPromoImagePreview] = useState('');
+  const [promoSendStatus, setPromoSendStatus] = useState(''); // '' | 'uploading' | 'sending'
+  const promoFileInputRef = useRef(null);
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('success');
@@ -46,127 +57,105 @@ export default function Notifications({ onNavigate }) {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  // Fetch users when "Select Users" is chosen (server-side filtering)
+  // ── Fetch users when "Select Users" is chosen ──────────────────────────────
   useEffect(() => {
-    if (userFilter !== 'select') return;
-    const [appliedStart, appliedEnd] = appliedDateRange;
-    const formatDate = (d) => {
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${day}`;
-    };
+    if (userFilter === 'select' && users.length === 0) {
+      setIsLoadingUsers(true);
+      apiClient
+        .get('/users/dashboard/all-users')
+        .then((response) => {
+          if (response.data.isRequestSuccessful) {
+            setUsers(response.data.successResponse);
+          }
+        })
+        .catch((error) => console.error('Error fetching users:', error))
+        .finally(() => setIsLoadingUsers(false));
+    }
+  }, [userFilter, users.length]);
 
-    const params = new URLSearchParams({ page: usersPage, limit: 50 });
-    if (appliedSearch.trim()) params.append('search', appliedSearch.trim());
-    if (appliedStart) params.append('dateFrom', formatDate(appliedStart));
-    if (appliedStart) params.append('dateTo', formatDate(appliedEnd ?? appliedStart));
+  // ── Filtering / sorting ────────────────────────────────────────────────────
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.role.toLowerCase().includes(searchTerm.toLowerCase());
 
-    setIsLoadingUsers(true);
-    apiClient
-      .get(`/users/dashboard/all-users?${params.toString()}`)
-      .then((response) => {
-        if (response.data.isRequestSuccessful) {
-          const res = response.data.successResponse;
-          setUsers(res.data ?? []);
-          const total = res.total ?? 0;
-          setUsersTotalCount(total);
-          setUsersTotalPages(Math.ceil(total / 50) || 1);
+    let matchesDate = true;
+    if (startDate || endDate) {
+      if (!user.createdAt) {
+        matchesDate = false;
+      } else {
+        const d = new Date(user.createdAt);
+        if (startDate && startDate > d) matchesDate = false;
+        if (endDate) {
+          const e = new Date(endDate);
+          e.setHours(23, 59, 59, 999);
+          if (e < d) matchesDate = false;
         }
-      })
-      .catch((error) => console.error('Error fetching users:', error))
-      .finally(() => setIsLoadingUsers(false));
-  }, [userFilter, usersPage, appliedSearch, appliedDateRange]);
+      }
+    }
+    return matchesSearch && matchesDate;
+  });
 
-  // Reset to page 1 when applied filters change
-  useEffect(() => {
-    setUsersPage(1);
-  }, [userFilter, appliedSearch, appliedDateRange]);
-
-  const handleApplyFilters = () => {
-    setAppliedSearch(searchTerm);
-    setAppliedDateRange(dateRange);
-  };
-
-  // Sort only (filtering is server-side)
-  const sortedUsers = [...users].sort((a, b) => {
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
     if (!sortConfig.key) return 0;
-    const aValue = a[sortConfig.key];
-    const bValue = b[sortConfig.key];
-    if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+    if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
     return 0;
   });
 
-  const handleSort = (key) => {
+  const handleSort = (key) =>
     setSortConfig({
       key,
       direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc',
     });
-  };
 
   const getUserId = (user) => user.id || user.userId;
 
   const handleUserToggle = (user) => {
-    setSelectedUsers((prev) => {
-      const userId = getUserId(user);
-      const exists = prev.find((u) => getUserId(u) === userId);
-      if (exists) return prev.filter((u) => getUserId(u) !== userId);
-      return [...prev, user];
-    });
+    const userId = getUserId(user);
+    setSelectedUsers((prev) =>
+      prev.find((u) => getUserId(u) === userId)
+        ? prev.filter((u) => getUserId(u) !== userId)
+        : [...prev, user]
+    );
   };
 
-  const removeSelectedUser = (userId) => {
+  const removeSelectedUser = (userId) =>
     setSelectedUsers((prev) => prev.filter((u) => getUserId(u) !== userId));
+
+  // ── Build userIds from current filter (shared by both send handlers) ───────
+  const buildUserIds = async () => {
+    const fetchAll = async () => {
+      if (users.length > 0) return users;
+      const r = await apiClient.get('/users/dashboard/all-users');
+      return r.data.isRequestSuccessful ? r.data.successResponse : [];
+    };
+
+    if (userFilter === 'all') {
+      return (await fetchAll()).map((u) => getUserId(u));
+    } else if (userFilter === 'paid') {
+      return (await fetchAll())
+        .filter((u) => u.plan && u.plan.toLowerCase() !== 'free' && u.plan.toLowerCase() !== 'none')
+        .map((u) => getUserId(u));
+    } else if (userFilter === 'unpaid') {
+      return (await fetchAll())
+        .filter((u) => !u.plan || u.plan.toLowerCase() === 'free' || u.plan.toLowerCase() === 'none')
+        .map((u) => getUserId(u));
+    } else if (userFilter === 'select') {
+      return selectedUsers.map((u) => getUserId(u));
+    }
+    return [];
   };
 
+  // ── Send General ──────────────────────────────────────────────────────────
   const handleSendNotification = async () => {
     try {
       setIsSending(true);
-      let userIds = [];
-
-      if (userFilter === 'all') {
-        if (users.length === 0) {
-          const response = await apiClient.get('/users/dashboard/all-users');
-          if (response.data.isRequestSuccessful) {
-            userIds = response.data.successResponse.map((u) => getUserId(u));
-          }
-        } else {
-          userIds = users.map((u) => getUserId(u));
-        }
-      } else if (userFilter === 'paid') {
-        if (users.length === 0) {
-          const response = await apiClient.get('/users/dashboard/all-users');
-          if (response.data.isRequestSuccessful) {
-            userIds = response.data.successResponse
-              .filter((u) => u.plan && u.plan.toLowerCase() !== 'free' && u.plan.toLowerCase() !== 'none')
-              .map((u) => getUserId(u));
-          }
-        } else {
-          userIds = users
-            .filter((u) => u.plan && u.plan.toLowerCase() !== 'free' && u.plan.toLowerCase() !== 'none')
-            .map((u) => getUserId(u));
-        }
-      } else if (userFilter === 'unpaid') {
-        if (users.length === 0) {
-          const response = await apiClient.get('/users/dashboard/all-users');
-          if (response.data.isRequestSuccessful) {
-            userIds = response.data.successResponse
-              .filter((u) => !u.plan || u.plan.toLowerCase() === 'free' || u.plan.toLowerCase() === 'none')
-              .map((u) => getUserId(u));
-          }
-        } else {
-          userIds = users
-            .filter((u) => !u.plan || u.plan.toLowerCase() === 'free' || u.plan.toLowerCase() === 'none')
-            .map((u) => getUserId(u));
-        }
-      } else if (userFilter === 'select') {
-        userIds = selectedUsers.map((u) => getUserId(u));
-      }
+      const userIds = await buildUserIds();
 
       if (userIds.length === 0) {
         showToastMsg('error', 'No users selected to send notification');
-        setIsSending(false);
         return;
       }
 
@@ -201,8 +190,108 @@ export default function Notifications({ onNavigate }) {
     }
   };
 
+  // ── Image helpers ─────────────────────────────────────────────────────────
+  const handlePromoImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToastMsg('error', 'Image size must not exceed 5MB');
+        if (promoFileInputRef.current) promoFileInputRef.current.value = '';
+        return;
+      }
+      setPromoImageFile(file);
+      setPromoImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const removePromoImage = (e) => {
+    e.stopPropagation();
+    setPromoImageFile(null);
+    setPromoImagePreview('');
+    if (promoFileInputRef.current) promoFileInputRef.current.value = '';
+  };
+
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const response = await apiClient.post('/upload/image', formData, {
+        headers: { 'Content-Type': undefined },
+      });
+      if (response.data.isRequestSuccessful && response.data.successResponse?.url) {
+        return response.data.successResponse.url;
+      }
+    } catch (error) {
+      console.error('Image upload failed:', error);
+    }
+    return null;
+  };
+
+  // ── Send Promotional ──────────────────────────────────────────────────────
+  const handleSendPromotional = async () => {
+    if (!promoLink.trim()) {
+      showToastMsg('error', 'Promotional URL is required');
+      return;
+    }
+    try {
+      let imageUrl = '';
+      if (promoImageFile) {
+        setPromoSendStatus('uploading');
+        const uploaded = await uploadImage(promoImageFile);
+        if (uploaded) imageUrl = uploaded;
+      }
+
+      setPromoSendStatus('sending');
+      const userIds = await buildUserIds();
+
+      if (userIds.length === 0) {
+        showToastMsg('error', 'No users selected to send notification');
+        setPromoSendStatus('');
+        return;
+      }
+
+      let response;
+      if (userIds.length === 1) {
+        response = await apiClient.post('/notifications/send-promotional', {
+          userId: userIds[0],
+          title: promoTitle,
+          body: promoBody,
+          imageUrl,
+          link: promoLink,
+        });
+      } else {
+        response = await apiClient.post('/notifications/send-bulk-promotional', {
+          userIds,
+          title: promoTitle,
+          body: promoBody,
+          imageUrl,
+          link: promoLink,
+        });
+      }
+
+      if (response.data.isRequestSuccessful) {
+        showToastMsg('success', response.data.errorDetail?.message || 'Promotional notification sent!');
+        setPromoTitle('');
+        setPromoBody('');
+        setPromoLink('');
+        setPromoImageFile(null);
+        setPromoImagePreview('');
+        setSelectedUsers([]);
+        if (promoFileInputRef.current) promoFileInputRef.current.value = '';
+      } else {
+        showToastMsg('error', response.data.errorDetail?.message || 'Failed to send promotional notification');
+      }
+    } catch (error) {
+      console.error('Error sending promotional notification:', error);
+      showToastMsg('error', 'An error occurred while sending promotional notification');
+    } finally {
+      setPromoSendStatus('');
+    }
+  };
+
+  // ── Misc ──────────────────────────────────────────────────────────────────
   const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'active': return 'bg-green-500';
       case 'banned': return 'bg-red-500';
       case 'pending': return 'bg-orange-500';
@@ -229,10 +318,64 @@ export default function Notifications({ onNavigate }) {
     );
   };
 
+  const tableColumns = [
+    ['name', 'Name'],
+    ['email', 'Email'],
+    ['role', 'Role'],
+    ['signupMethod', 'Signup Method'],
+    ['createdAt', 'Created At'],
+    ['status', 'Status'],
+    ['plan', 'Plan'],
+    ['isProfileCompleted', 'Profile Completed'],
+  ];
+
+  // ── Shared UI pieces ──────────────────────────────────────────────────────
+  const UserFilterRadios = () => (
+    <div className="flex items-center gap-6 mb-6">
+      {[
+        ['all', 'All Users'],
+        ['paid', 'Paid Users'],
+        ['unpaid', 'Unpaid Users'],
+        ['select', 'Select Users'],
+      ].map(([val, label]) => (
+        <label key={val} className="flex items-center gap-2 text-white cursor-pointer">
+          <input
+            type="radio"
+            name="userFilter"
+            value={val}
+            checked={userFilter === val}
+            onChange={(e) => setUserFilter(e.target.value)}
+            className="w-4 h-4 accent-blue-500"
+          />
+          <span>{label}</span>
+        </label>
+      ))}
+    </div>
+  );
+
+  const SelectedChips = () =>
+    userFilter === 'select' && selectedUsers.length > 0 ? (
+      <div className="flex flex-wrap gap-2 mb-4">
+        {selectedUsers.map((user, index) => (
+          <div
+            key={user.id || user.userId || `sel-${index}`}
+            className="flex items-center gap-2 bg-[#2C3947] text-white px-3 py-1 rounded-full text-sm"
+          >
+            <span>{user.name}</span>
+            <button onClick={() => removeSelectedUser(getUserId(user))} className="hover:text-red-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+    ) : null;
+
   const UserTable = () =>
     userFilter === 'select' ? (
       <>
-        <div className="flex items-end gap-3 mb-6">
+        <div className="flex items-end gap-6 mb-6">
           <div className="relative w-64">
             <label className="block text-gray-300 text-sm mb-1">Search</label>
             <div className="relative">
@@ -244,7 +387,6 @@ export default function Notifications({ onNavigate }) {
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleApplyFilters()}
                 className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
               />
             </div>
@@ -262,15 +404,9 @@ export default function Notifications({ onNavigate }) {
               className="px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
             />
           </div>
-          <button
-            onClick={handleApplyFilters}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
-          >
-            Apply
-          </button>
         </div>
 
-        <div className="overflow-auto mb-4">
+        <div className="h-96 overflow-auto mb-6">
           {isLoadingUsers ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
@@ -345,60 +481,10 @@ export default function Notifications({ onNavigate }) {
             </table>
           )}
         </div>
-
-        {/* Pagination */}
-        {!isLoadingUsers && usersTotalPages > 1 && (
-          <div className="mt-2 mb-6 flex items-center justify-between">
-            <p className="text-gray-400 text-sm">
-              Showing{' '}
-              <span className="text-white font-medium">
-                {(usersPage - 1) * 50 + 1}–{Math.min(usersPage * 50, usersTotalCount)}
-              </span>{' '}
-              of <span className="text-white font-medium">{usersTotalCount}</span> users
-            </p>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setUsersPage((p) => Math.max(1, p - 1))}
-                disabled={usersPage === 1}
-                className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                ‹ Prev
-              </button>
-              {Array.from({ length: usersTotalPages }, (_, i) => i + 1)
-                .filter((p) => p === 1 || p === usersTotalPages || (p >= usersPage - 2 && p <= usersPage + 2))
-                .reduce((acc, p, idx, arr) => {
-                  if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
-                  acc.push(p);
-                  return acc;
-                }, [])
-                .map((item, idx) =>
-                  item === '...' ? (
-                    <span key={`e-${idx}`} className="px-2 text-gray-500">…</span>
-                  ) : (
-                    <button
-                      key={item}
-                      onClick={() => setUsersPage(item)}
-                      className={`px-3 py-1.5 rounded text-sm transition-colors ${
-                        usersPage === item ? 'bg-blue-600 text-white font-medium' : 'text-gray-300 hover:bg-[#2C3947]'
-                      }`}
-                    >
-                      {item}
-                    </button>
-                  )
-                )}
-              <button
-                onClick={() => setUsersPage((p) => Math.min(usersTotalPages, p + 1))}
-                disabled={usersPage === usersTotalPages}
-                className="px-3 py-1.5 rounded text-sm text-gray-300 hover:bg-[#2C3947] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Next ›
-              </button>
-            </div>
-          </div>
-        )}
       </>
     ) : null;
 
+  // ── JSX ───────────────────────────────────────────────────────────────────
   return (
     <div className="flex-1 ml-48 bg-[#2C3947] min-h-screen">
       <Header />
@@ -438,49 +524,11 @@ export default function Notifications({ onNavigate }) {
             </button>
           </div>
 
-          {/* General Tab */}
+          {/* ── GENERAL TAB ──────────────────────────────────────────────── */}
           {activeTab === 'general' && (
             <>
-              {/* User Filter Radio Buttons */}
-              <div className="flex items-center gap-6 mb-6">
-                {[
-                  { value: 'all', label: 'All Users' },
-                  { value: 'paid', label: 'Paid Users' },
-                  { value: 'unpaid', label: 'Unpaid Users' },
-                  { value: 'select', label: 'Select Users' },
-                ].map(({ value, label }) => (
-                  <label key={value} className="flex items-center gap-2 text-white cursor-pointer">
-                    <input
-                      type="radio"
-                      name="userFilter"
-                      value={value}
-                      checked={userFilter === value}
-                      onChange={(e) => setUserFilter(e.target.value)}
-                      className="w-4 h-4 accent-blue-500"
-                    />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
-
-              {/* Selected Users Chips */}
-              {userFilter === 'select' && selectedUsers.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {selectedUsers.map((user, index) => (
-                    <div
-                      key={user.id || user.userId || `selected-${index}`}
-                      className="flex items-center gap-2 bg-[#2C3947] text-white px-3 py-1 rounded-full text-sm"
-                    >
-                      <span>{user.name}</span>
-                      <button onClick={() => removeSelectedUser(getUserId(user))} className="hover:text-red-400">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <UserFilterRadios />
+              <SelectedChips />
 
               <div className="mb-4">
                 <label className="block text-gray-300 text-sm mb-2">Notification Title</label>
@@ -511,9 +559,7 @@ export default function Notifications({ onNavigate }) {
                 <button
                   onClick={handleSendNotification}
                   disabled={!title || !message || isSending}
-                  className={`bg-white text-gray-800 py-2 px-6 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                    isSending ? '' : 'hover:bg-gray-100'
-                  }`}
+                  className={`bg-white text-gray-800 py-2 px-6 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isSending ? '' : 'hover:bg-gray-100'}`}
                 >
                   {isSending ? (
                     <div className="flex items-center gap-2">
@@ -528,18 +574,118 @@ export default function Notifications({ onNavigate }) {
             </>
           )}
 
-          {/* Promotional Tab */}
+          {/* ── PROMOTIONAL TAB ──────────────────────────────────────────── */}
           {activeTab === 'promotional' && (
-            <div className="text-gray-400 py-8 text-center">
-              Promotional notifications coming soon.
-            </div>
+            <>
+              <UserFilterRadios />
+              <SelectedChips />
+
+              <div className="mb-4">
+                <label className="block text-gray-300 text-sm mb-2">Notification Title</label>
+                <input
+                  type="text"
+                  value={promoTitle}
+                  onChange={(e) => setPromoTitle(e.target.value)}
+                  placeholder="Enter title"
+                  className="w-full px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-gray-300 text-sm mb-2">Notification Message</label>
+                <textarea
+                  value={promoBody}
+                  onChange={(e) => setPromoBody(e.target.value)}
+                  placeholder="write here"
+                  className="w-full px-4 py-3 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  rows={4}
+                />
+                <div className="text-gray-400 text-sm mt-1">{promoBody.length}/1000 characters</div>
+              </div>
+
+              {/* Image Upload */}
+              <div className="mb-4">
+                <label className="block text-gray-300 text-sm mb-2">Promotional Image (optional)</label>
+                <div
+                  className="border-2 border-dashed border-gray-600 rounded-lg p-4 cursor-pointer hover:border-gray-400 transition-colors"
+                  onClick={() => promoFileInputRef.current?.click()}
+                >
+                  {promoImagePreview ? (
+                    <div className="flex items-center gap-4">
+                      <img src={promoImagePreview} alt="Preview" className="h-20 w-20 object-cover rounded-lg" />
+                      <div>
+                        <p className="text-white text-sm">{promoImageFile?.name}</p>
+                        <button onClick={removePromoImage} className="text-red-400 hover:text-red-300 text-xs mt-1">
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center py-4">
+                      <svg className="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-gray-400 text-sm">Click to upload image</p>
+                      <p className="text-gray-500 text-xs mt-1">PNG, JPG, JPEG · Max 5MB</p>
+                    </div>
+                  )}
+                  <input
+                    ref={promoFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePromoImageChange}
+                    className="hidden"
+                  />
+                </div>
+              </div>
+
+              {/* Promotional Link */}
+              <div className="mb-6">
+                <label className="block text-gray-300 text-sm mb-2">Promotional Link <span className="text-red-400">*</span></label>
+                <input
+                  type="text"
+                  value={promoLink}
+                  onChange={(e) => setPromoLink(e.target.value)}
+                  placeholder="https://example.com/offer"
+                  className="w-full px-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <UserTable />
+
+              <div className="flex justify-end">
+                <button
+                  onClick={handleSendPromotional}
+                  disabled={!promoTitle || !promoBody || !promoLink || !!promoSendStatus}
+                  className={`bg-white text-gray-800 py-2 px-6 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${promoSendStatus ? '' : 'hover:bg-gray-100'}`}
+                >
+                  {promoSendStatus === 'uploading' ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-800"></div>
+                      <span>Uploading image...</span>
+                    </div>
+                  ) : promoSendStatus === 'sending' ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-800"></div>
+                      <span>Sending...</span>
+                    </div>
+                  ) : (
+                    'Send Promotional'
+                  )}
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
 
-      {/* Toast Notification */}
+      {/* Toast */}
       {showToast && (
-        <div className={`fixed bottom-8 right-8 ${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-up`}>
+        <div
+          className={`fixed bottom-8 right-8 ${
+            toastType === 'success' ? 'bg-green-500' : 'bg-red-500'
+          } text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 z-50 animate-slide-up`}
+        >
           {toastType === 'success' ? (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
