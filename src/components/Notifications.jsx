@@ -18,6 +18,7 @@ export default function Notifications({ onNavigate }) {
   const [dateRange, setDateRange] = useState([null, null]);
   const [startDate, endDate] = dateRange;
   const [searchTerm, setSearchTerm] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [users, setUsers] = useState([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
@@ -55,13 +56,19 @@ export default function Notifications({ onNavigate }) {
   useEffect(() => {
     if (userFilter !== 'select') return;
     setIsLoadingUsers(true);
+    const params = new URLSearchParams({ page: usersPage, limit: USERS_LIMIT });
+    if (appliedSearch.trim()) params.append('search', appliedSearch.trim());
+    const toLocalDate = (d) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (startDate) params.append('dateFrom', toLocalDate(startDate));
+    if (startDate) params.append('dateTo', toLocalDate(endDate ?? startDate));
     apiClient
-      .get(`/users/dashboard/all-users?page=${usersPage}&limit=${USERS_LIMIT}`)
+      .get(`/users/dashboard/all-users?${params.toString()}`)
       .then((response) => {
         if (response.data.isRequestSuccessful) {
           const res = response.data.successResponse;
           const data = Array.isArray(res) ? res : (res.data ?? []);
-          const total = res.total ?? data.length;
+          const total = res.total ?? res.totalUsers ?? data.length;
           setUsers(data);
           setUsersTotalCount(total);
           setUsersTotalPages(Math.ceil(total / USERS_LIMIT) || 1);
@@ -69,36 +76,18 @@ export default function Notifications({ onNavigate }) {
       })
       .catch((error) => console.error('Error fetching users:', error))
       .finally(() => setIsLoadingUsers(false));
-  }, [userFilter, usersPage]);
+  }, [userFilter, usersPage, appliedSearch, startDate, endDate]);
 
-  // Reset page when switching to select filter
+  // Reset page when switching to select filter, search, or date range changes
   useEffect(() => {
     if (userFilter === 'select') setUsersPage(1);
-  }, [userFilter]);
+  }, [userFilter, appliedSearch, startDate, endDate]);
 
   // ── Filtering / sorting ────────────────────────────────────────────────────
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch =
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase());
+  // Search and date range are fully server-side
+  const filteredUsers = users;
 
-    let matchesDate = true;
-    if (startDate || endDate) {
-      if (!user.createdAt) {
-        matchesDate = false;
-      } else {
-        const d = new Date(user.createdAt);
-        if (startDate && startDate > d) matchesDate = false;
-        if (endDate) {
-          const e = new Date(endDate);
-          e.setHours(23, 59, 59, 999);
-          if (e < d) matchesDate = false;
-        }
-      }
-    }
-    return matchesSearch && matchesDate;
-  });
+  const handleSearch = () => setAppliedSearch(searchTerm);
 
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     if (!sortConfig.key) return 0;
@@ -400,19 +389,28 @@ export default function Notifications({ onNavigate }) {
     userFilter === 'select' ? (
       <>
         <div className="flex items-end gap-6 mb-6">
-          <div className="relative w-64">
+          <div>
             <label className="block text-gray-300 text-sm mb-1">Search</label>
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Search"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative w-64">
+                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="pl-10 pr-4 py-2 bg-[#2C3947] border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                />
+              </div>
+              <button
+                onClick={handleSearch}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer"
+              >
+                Search
+              </button>
             </div>
           </div>
           <div>
@@ -457,7 +455,7 @@ export default function Notifications({ onNavigate }) {
                     >
                       <div className="flex items-center gap-2">
                         {label}
-                        <SortIcon columnKey={key} />
+                        {SortIcon({ columnKey: key })}
                       </div>
                     </th>
                   ))}
@@ -602,8 +600,8 @@ export default function Notifications({ onNavigate }) {
           {/* ── GENERAL TAB ──────────────────────────────────────────────── */}
           {activeTab === 'general' && (
             <>
-              <UserFilterRadios />
-              <SelectedChips />
+              {UserFilterRadios()}
+              {SelectedChips()}
 
               <div className="mb-4">
                 <label className="block text-gray-300 text-sm mb-2">Notification Title</label>
@@ -628,7 +626,7 @@ export default function Notifications({ onNavigate }) {
                 <div className="text-gray-400 text-sm mt-1">{message.length}/1000 characters</div>
               </div>
 
-              <UserTable />
+              {UserTable()}
 
               <div className="flex justify-end">
                 <button
@@ -652,8 +650,8 @@ export default function Notifications({ onNavigate }) {
           {/* ── PROMOTIONAL TAB ──────────────────────────────────────────── */}
           {activeTab === 'promotional' && (
             <>
-              <UserFilterRadios />
-              <SelectedChips />
+              {UserFilterRadios()}
+              {SelectedChips()}
 
               <div className="mb-4">
                 <label className="block text-gray-300 text-sm mb-2">Notification Title</label>
@@ -726,7 +724,7 @@ export default function Notifications({ onNavigate }) {
                 />
               </div>
 
-              <UserTable />
+              {UserTable()}
 
               <div className="flex justify-end">
                 <button
