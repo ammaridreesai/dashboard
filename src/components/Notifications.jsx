@@ -535,6 +535,20 @@ export default function Notifications({ onNavigate }) {
           </div>
         </div>
 
+        {selectedUsers.length > 0 && (
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-blue-400 font-medium">
+              {selectedUsers.length} user{selectedUsers.length !== 1 ? "s" : ""} selected
+            </span>
+            <button
+              onClick={() => setSelectedUsers([])}
+              className="text-xs text-gray-400 hover:text-red-400 transition-colors"
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
         <div className="h-96 overflow-auto mb-4">
           {isLoadingUsers ? (
             <div className="flex justify-center items-center py-12">
@@ -548,14 +562,25 @@ export default function Notifications({ onNavigate }) {
                     <input
                       type="checkbox"
                       className="w-4 h-4 accent-blue-500"
-                      onChange={(e) =>
-                        e.target.checked
-                          ? setSelectedUsers(sortedUsers)
-                          : setSelectedUsers([])
-                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const newUsers = sortedUsers.filter(
+                            (u) => !selectedUsers.some((s) => getUserId(s) === getUserId(u))
+                          );
+                          setSelectedUsers((prev) => [...prev, ...newUsers]);
+                        } else {
+                          setSelectedUsers((prev) =>
+                            prev.filter(
+                              (s) => !sortedUsers.some((u) => getUserId(u) === getUserId(s))
+                            )
+                          );
+                        }
+                      }}
                       checked={
-                        selectedUsers.length === sortedUsers.length &&
-                        sortedUsers.length > 0
+                        sortedUsers.length > 0 &&
+                        sortedUsers.every((u) =>
+                          selectedUsers.some((s) => getUserId(s) === getUserId(u))
+                        )
                       }
                     />
                   </th>
