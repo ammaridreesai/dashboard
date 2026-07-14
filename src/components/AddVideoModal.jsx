@@ -294,6 +294,7 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
                 onChange={handleChange}
                 className={inputClass}
                 min={1}
+                step="any"
                 required
               />
             </div>
