@@ -26,6 +26,13 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
   const [formData, setFormData] = useState(defaultFormData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyBaseUrl = () => {
+    navigator.clipboard.writeText(CLOUDFRONT_BASE_URL);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   useEffect(() => {
     if (video) {
@@ -57,7 +64,7 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "number" ? Number(value) : value,
+      [name]: type === "number" ? (value === "" ? "" : Number(value)) : value,
     }));
   };
 
@@ -69,6 +76,12 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
     try {
       const submitData = { ...formData };
       submitData.url = CLOUDFRONT_BASE_URL + submitData.url;
+      submitData.level = submitData.level === "" ? 0 : submitData.level;
+      submitData.videoTime = submitData.videoTime === "" ? 0 : submitData.videoTime;
+      submitData.xpToBeGained =
+        submitData.xpToBeGained === "" ? 0 : submitData.xpToBeGained;
+      submitData.xpToBeGainedOnWatch =
+        submitData.xpToBeGainedOnWatch === "" ? 0 : submitData.xpToBeGainedOnWatch;
       if (submitData.practiceType !== "Essential") {
         submitData.essentialCategory = null;
         submitData.essentialSubCategory = null;
@@ -157,8 +170,24 @@ export default function AddVideoModal({ open, onClose, onSubmit, video }) {
             <div className="col-span-2">
               <label className={labelClass}>CloudFront URL</label>
               <div className="flex">
-                <span className="inline-flex items-center px-3 bg-[#1E2532] border border-r-0 border-gray-600 rounded-l-lg text-gray-400 text-sm whitespace-nowrap select-none">
+                <span className="inline-flex items-center gap-2 px-3 bg-[#1E2532] border border-r-0 border-gray-600 rounded-l-lg text-gray-400 text-sm whitespace-nowrap select-none">
                   {CLOUDFRONT_BASE_URL}
+                  <button
+                    type="button"
+                    onClick={handleCopyBaseUrl}
+                    className="text-gray-400 hover:text-white transition-colors cursor-pointer flex-shrink-0"
+                    title="Copy URL"
+                  >
+                    {copied ? (
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </button>
                 </span>
                 <input
                   type="text"
